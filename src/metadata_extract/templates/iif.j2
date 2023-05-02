@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<IIF>
+{%- set a = attributes -%}
+{%- set collection = a.Collection.Value -%}
+{#- set collection = "S1.SAR.L0-RAW" -#}
+{%- macro FEATURE(key, attribute='', indent='') -%}
+  {%- if not attribute -%}
+    {%- set attribute=key -%}
+  {%- endif -%}
+  {%- if a[attribute] -%}
+{{ indent }}<feature key="{{ key }}">{{ a[attribute].Value }}</feature>{%- else -%}
+{{ indent }}<!-- {{ key }} -->{% endif -%}
+{%- endmacro %}
+ <item>
+  <administration>
+    <id>(rid://{{ collection }})</id>
+    <type>{{ collection }}</type>
+    <keys>
+      <feature key="id">{{ a.uuid.Value | e }}</feature>
+      <feature key="name">{{ a.identifier.Value }}</feature>
+      <feature key="productType">{{ a.productType.Value }}</feature>
+      <feature key="beginningDateTime">{{ a.beginningDateTime.Value }}</feature>
+    </keys>
+    <owner>DIMS</owner>
+    <group>DIMS</group>
+    <permission>
+      <ownerRights>VIEW</ownerRights>
+      <ownerRights>READ</ownerRights>
+      <ownerRights>WRITE</ownerRights>
+      <ownerRights>DELETE</ownerRights>
+      <groupRights>VIEW</groupRights>
+      <groupRights>READ</groupRights>
+      <groupRights>WRITE</groupRights>
+      <worldRights>VIEW</worldRights>
+      <worldRights>READ</worldRights>
+    </permission>
+    <location>DPA</location>
+    <permanency>PERMANENT</permanency>
+  </administration>
+  <commandOption>
+    <action>INSERT</action>
+    <implicitVersion>false</implicitVersion>
+    <transfer>COPY</transfer>
+  </commandOption>
+  <fileInformation>
+    <file>
+      <location>
+        <host>.</host>
+        <path>.</path>
+        <name>{{ a.filename.Value }}</name>
+        <account>.</account>
+        <checksumAlgorithm>{{ a.checksums[0].Algorithm if a["checksums"] }}</checksumAlgorithm>
+        <checksumValue>{{ a.checksums[0].Value if a["checksums"] }}</checksumValue>
+      </location>
+      <size>
+        <value>{{ a.contentLength.Value }}</value>
+        <unit>Byte</unit>
+        <bytesPerUnit>1</bytesPerUnit>
+      </size>
+    </file>
+  </fileInformation>
+  {#-
+  <components>
+    <component>
+      <type>{{ collection }}</type>
+      <name/>
+      <role>PRIM</role>
+      <ref>$((rid://${collection}-PRIM))</ref>
+    </component>
+  </components>
+  #}
+  <parameters>
+    <availability>EXISTING</availability>
+    <reliability>REAL</reliability>
+    <quality>APPROVED</quality>
+    <revision>1.0</revision>
+    <sphere>earth</sphere>
+    {% if a.coordinates -%}
+    <spatialCoverage>
+      {% if a.coordinates.Value.startswith('LINESTRING') -%}
+      {%- set coords = a.coordinates.Value.replace('LINESTRING(','').replace(',','').replace(')','').split(' ') -%}
+      <boundingBox>
+        <westBoundingCoordinate>{{ coords[2] }}</westBoundingCoordinate>
+        <southBoundingCoordinate>{{ coords[1] }}</southBoundingCoordinate>
+        <eastBoundingCoordinate>{{ coords[0] }}</eastBoundingCoordinate>
+        <northBoundingCoordinate>{{ coords[3] }}</northBoundingCoordinate>
+      </boundingBox>
+      {%- else -%}
+      {%- set points = a.coordinates.Value.replace('POLYGON((','').replace('))','').split(', ') -%}
+      <boundingPolygon>
+        {% for point in points -%}
+        {%- set point = point.split(' ') -%}
+        {%- if not loop.last -%}{#- skip closing polygon point in IIF -#}
+        <point>
+          <latitude>{{ point[1] }}</latitude>
+          <longitude>{{ point[0] }}</longitude>
+        </point>
+        {%- endif %}
+        {%- endfor %}
+      </boundingPolygon>
+      {%- endif %}
+    </spatialCoverage>
+    {%- else -%}
+    <spatialCoverage>
+      <isGlobal>true</isGlobal>
+    </spatialCoverage>
+    {%- endif %}
+    <altitudeCoverage />
+    <temporalCoverage>
+      <startTime>{{ a.beginningDateTime.Value }}</startTime>
+      <stopTime>{{ a.endingDateTime.Value if a.endingDateTime else a.beginningDateTime.Value }}</stopTime>
+    </temporalCoverage>
+    <creation>
+{#-
+      <!-- IF USING IIF FOR INSERTING PRODUCT INTO PL -->
+      <!-- PLEASE ENSURE THAT CREATOR IS NOT EXISTING -->
+      <!-- OTHERWISE INSERT A VALID VALUE             -->
+      <!-- <creator>$((lid://*PLEASE INSERT A VALID VALUE*))</creator>-->
+#}
+      <time>{{ a.publicationDate.Value.replace('Z', '') }}</time>
+      <site>DPA</site>
+    </creation>
+    <predecessor />
+    <auxiliary />
+  </parameters>
+  <specificParameters>
+    {{ FEATURE('id', 'uuid') }}
+    {{ FEATURE('name', 'identifier') }}
+    {{ FEATURE('productType') }}
+    {{ FEATURE('filename') }}
+    {{ FEATURE('contentLength') }}
+    {{ FEATURE('originDate') }}
+    {{ FEATURE('modificationDate') }}
+    <feature key="checksums">
+      <feature key="checksumsAlgorithm">{{ a.checksums[0].Algorithm if a["checksums"] }}</feature>
+      <feature key="checksumsValue">{{ a.checksums[0].Value if a["checksums"] }}</feature>
+      <feature key="checksumsDate">{{ a.checksums[0].ChecksumDate if a["checksums"] }}</feature>
+    </feature>
+    {{ FEATURE('footprint', 'coordinates') }}
+    {{ FEATURE('beginningDateTime') }}
+    {{ FEATURE('endingDateTime') }}
+    {{ FEATURE('platformShortName') }}
+    {{ FEATURE('platformSerialIdentifier') }}
+    {{ FEATURE('platformIdentifier') }}
+    {{ FEATURE('instrumentShortName') }}
+    {{ FEATURE('operationalMode') }}
+    {{ FEATURE('processingLevel') }}
+    {{ FEATURE('swathIdentifier') }}
+    {{ FEATURE('instrumentConfigurationID') }}
+    {{ FEATURE('orbitDirection') }}
+    {{ FEATURE('orbitNumber') }}
+    {{ FEATURE('lastOrbitNumber') }}
+    {{ FEATURE('relativeOrbitNumber') }}
+    {{ FEATURE('lastRelativeOrbitNumber') }}
+    {{ FEATURE('cycleNumber') }}
+    {{ FEATURE('datatakeID') }}
+    {{ FEATURE('totalSlices') }}
+    {{ FEATURE('sliceNumber') }}
+    {{ FEATURE('sliceProductFlag') }}
+    {{ FEATURE('segmentStartTime') }}
+    {{ FEATURE('polarisationChannels') }}
+    {{ FEATURE('timeliness') }}
+    {{ FEATURE('processingCenter') }}
+    {{ FEATURE('processingDate') }}
+    {{ FEATURE('processingName') }}
+    {{ FEATURE('processorName') }}
+    {{ FEATURE('processorVersion') }}
+    {{ FEATURE('productClass') }}
+    {{ FEATURE('productComposition') }}
+    {{ FEATURE('productConsolidation') }}
+    {{ FEATURE('productGeneration') }}
+    {{ FEATURE('startTimeFromAscendingNode') }}
+    {{ FEATURE('completionTimeFromAscendingNode') }}
+  </specificParameters>
+{#
+ </item>
+  <item>
+    <administration>
+      <id>(rid://${collection}-PRIM)</id>
+        <type>${collection}-PRIM</type>
+        <keys>#((rid://$collection))</keys>
+        <owner>DIMS</owner>
+        <group>DIMS</group>
+        <permission>#((rid://$collection))</permission>
+        <location>OP</location>
+        <permanency>PERMANENT</permanency>
+      </administration>
+      <commandOption>
+        <action>INSERT</action>
+        <implicitVersion>false</implicitVersion>
+        <transfer>COPY</transfer>
+      </commandOption>
+    <components/>
+    <fileInformation>
+      <file>
+        <location>
+          <host>.</host>
+          <path>.</path>
+          <name>$primaryFile.getName()</name>
+          <account>.</account>
+        </location>
+        <size>
+          <value>$!xmlContext.getValue( '//eop:product//eop:size' )</value>
+          <unit>Byte</unit>
+          <bytesPerUnit>1</bytesPerUnit>
+        </size>
+      </file>
+    </fileInformation>
+    <parameters>#((rid://$collection))</parameters>
+    <specificParameters/>
+{% for attribute in attributes -%}
+{{ attribute }} {{ attributes[attribute].Type }} {{ attributes[attribute].Value }}
+{% endfor %}
+-#}
+ </item>
+</IIF>

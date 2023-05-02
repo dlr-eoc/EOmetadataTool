@@ -1,0 +1,735 @@
+{
+  "type": "Feature",
+  "stac_version": "1.0.0",
+  "id": "S3B_OL_1_EFR_20230311T214926_20230311T214926_0000_077_100_4320",
+  "properties": {
+    "sat:platform_international_designator": "2018-039A",
+    "sat:orbit_state": "descending",
+    "sat:absolute_orbit": 25397,
+    "sat:relative_orbit": 100,
+    "start_datetime": "2023-03-11 21:49:26.174111+00:00",
+    "end_datetime": "2023-03-11 21:49:26.318004+00:00",
+    "instruments": [
+      "OLCI"
+    ],
+    "s3:mode": "EO",
+    "s3:productType": "OL_1_EFR___",
+    "s3:gsd": 300,
+    "s3:salineWaterPixels_percentage": 0.0,
+    "s3:coastalPixels_percentage": 0.0,
+    "s3:freshInlandWaterPixels_percentage": 0.0,
+    "s3:tidalRegionPixels_percentage": 0.0,
+    "s3:brightPixels_percentage": 99.0,
+    "s3:invalidPixels_percentage": 1.0,
+    "s3:cosmeticPixels_percentage": 0.0,
+    "s3:duplicatedPixels_percentage": 25.0,
+    "s3:saturatedPixels_percentage": 0.0,
+    "s3:dubiousSamples_percentage": 0.0,
+    "s3:shape": [
+      4865,
+      3
+    ],
+    "providers": [
+      {
+        "name": "ESA",
+        "roles": [
+          "producer",
+          "processor",
+          "licensor"
+        ],
+        "url": "https://earth.esa.int/web/guest/home"
+      }
+    ],
+    "platform": "Sentinel-3B",
+    "constellation": "Sentinel-3",
+    "datetime": "2023-03-11T21:49:26.246057Z"
+  },
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [
+          130.327,
+          -68.2341
+        ],
+        [
+          131.382,
+          -68.7348
+        ],
+        [
+          132.456,
+          -69.2259
+        ],
+        [
+          133.571,
+          -69.7066
+        ],
+        [
+          134.729,
+          -70.1763
+        ],
+        [
+          135.95,
+          -70.6415
+        ],
+        [
+          137.22,
+          -71.0952
+        ],
+        [
+          138.572,
+          -71.5493
+        ],
+        [
+          139.971,
+          -71.9821
+        ],
+        [
+          141.432,
+          -72.4068
+        ],
+        [
+          142.93,
+          -72.8228
+        ],
+        [
+          144.535,
+          -73.2254
+        ],
+        [
+          146.216,
+          -73.615
+        ],
+        [
+          147.999,
+          -73.9933
+        ],
+        [
+          149.84,
+          -74.3541
+        ],
+        [
+          151.761,
+          -74.6982
+        ],
+        [
+          153.74,
+          -75.0196
+        ],
+        [
+          155.832,
+          -75.3291
+        ],
+        [
+          158.019,
+          -75.6175
+        ],
+        [
+          160.308,
+          -75.8885
+        ],
+        [
+          160.317,
+          -75.8837
+        ],
+        [
+          158.029,
+          -75.6128
+        ],
+        [
+          155.842,
+          -75.3245
+        ],
+        [
+          153.751,
+          -75.0151
+        ],
+        [
+          151.772,
+          -74.6938
+        ],
+        [
+          149.851,
+          -74.3497
+        ],
+        [
+          148.011,
+          -73.9891
+        ],
+        [
+          146.228,
+          -73.6108
+        ],
+        [
+          144.547,
+          -73.2213
+        ],
+        [
+          142.942,
+          -72.8189
+        ],
+        [
+          141.444,
+          -72.4029
+        ],
+        [
+          139.983,
+          -71.9784
+        ],
+        [
+          138.584,
+          -71.5456
+        ],
+        [
+          137.232,
+          -71.0916
+        ],
+        [
+          135.962,
+          -70.638
+        ],
+        [
+          134.741,
+          -70.1728
+        ],
+        [
+          133.583,
+          -69.7032
+        ],
+        [
+          132.467,
+          -69.2226
+        ],
+        [
+          131.393,
+          -68.7315
+        ],
+        [
+          130.339,
+          -68.2309
+        ],
+        [
+          130.327,
+          -68.2341
+        ]
+      ]
+    ]
+  },
+  "links": [
+    {
+      "rel": "license",
+      "href": "https://sentinel.esa.int/documents/247904/690755/Sentinel_Data_Legal_Notice"
+    },
+    {
+      "rel": "self",
+      "href": "/mnt/h/projects/SentinelMetadataExtract/tests/references/stac/S3B_OL_1_EFR_20230311T214926_20230311T214926_0000_077_100_4320.json",
+      "type": "application/json"
+    }
+  ],
+  "assets": {
+    "safe-manifest": {
+      "href": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/xfdumanifest.xml",
+      "type": "application/xml",
+      "file:checksum": "6190a4fa05855d5ac4a9fe493de7fc0a",
+      "file:local_path": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/xfdumanifest.xml",
+      "file:size": 170766,
+      "roles": [
+        "metadata"
+      ]
+    },
+    "Oa01_radiance": {
+      "href": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/Oa01_radiance.nc",
+      "type": "application/x-netcdf",
+      "description": "TOA radiance for OLCI acquisition band Oa01",
+      "resolution": [
+        270,
+        294
+      ],
+      "eo:bands": [
+        {
+          "name": "Oa01",
+          "description": "Band 1 - Aerosol correction, improved water constituent retrieval",
+          "center_wavelength": 400,
+          "band_width": 15
+        }
+      ],
+      "file:checksum": "50701dd1201f4a033135ed3c02c904cf",
+      "file:local_path": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/Oa01_radiance.nc",
+      "file:size": 29997,
+      "roles": [
+        "data"
+      ]
+    },
+    "Oa02_radiance": {
+      "href": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/Oa02_radiance.nc",
+      "type": "application/x-netcdf",
+      "description": "TOA radiance for OLCI acquisition band Oa02",
+      "resolution": [
+        270,
+        294
+      ],
+      "eo:bands": [
+        {
+          "name": "Oa02",
+          "description": "Band 2 - Yellow substance and detrital pigments (turbidity)",
+          "center_wavelength": 412.5,
+          "band_width": 10
+        }
+      ],
+      "file:checksum": "47c959b4015d77b62e917cca991ac92a",
+      "file:local_path": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/Oa02_radiance.nc",
+      "file:size": 30590,
+      "roles": [
+        "data"
+      ]
+    },
+    "Oa03_radiance": {
+      "href": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/Oa03_radiance.nc",
+      "type": "application/x-netcdf",
+      "description": "TOA radiance for OLCI acquisition band Oa03",
+      "resolution": [
+        270,
+        294
+      ],
+      "eo:bands": [
+        {
+          "name": "Oa03",
+          "description": "Band 3 - Chlorophyll absorption maximum, biogeochemistry, vegetation",
+          "center_wavelength": 442.5,
+          "band_width": 10
+        }
+      ],
+      "file:checksum": "712fceaa7bc95b4538a86e9e6803fdbf",
+      "file:local_path": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/Oa03_radiance.nc",
+      "file:size": 30951,
+      "roles": [
+        "data"
+      ]
+    },
+    "Oa04_radiance": {
+      "href": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/Oa04_radiance.nc",
+      "type": "application/x-netcdf",
+      "description": "TOA radiance for OLCI acquisition band Oa04",
+      "resolution": [
+        270,
+        294
+      ],
+      "eo:bands": [
+        {
+          "name": "Oa04",
+          "description": "Band 4 - Chlorophyll",
+          "center_wavelength": 490,
+          "band_width": 10
+        }
+      ],
+      "file:checksum": "dd18396069255a3f0056fe9f1679bb4e",
+      "file:local_path": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/Oa04_radiance.nc",
+      "file:size": 31640,
+      "roles": [
+        "data"
+      ]
+    },
+    "Oa05_radiance": {
+      "href": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/Oa05_radiance.nc",
+      "type": "application/x-netcdf",
+      "description": "TOA radiance for OLCI acquisition band Oa05",
+      "resolution": [
+        270,
+        294
+      ],
+      "eo:bands": [
+        {
+          "name": "Oa05",
+          "description": "Band 5 - Chlorophyll, sediment, turbidity, red tide",
+          "center_wavelength": 510,
+          "band_width": 10
+        }
+      ],
+      "file:checksum": "915907cc035e89e4ae6e65d04b543643",
+      "file:local_path": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/Oa05_radiance.nc",
+      "file:size": 31625,
+      "roles": [
+        "data"
+      ]
+    },
+    "Oa06_radiance": {
+      "href": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/Oa06_radiance.nc",
+      "type": "application/x-netcdf",
+      "description": "TOA radiance for OLCI acquisition band Oa06",
+      "resolution": [
+        270,
+        294
+      ],
+      "eo:bands": [
+        {
+          "name": "Oa06",
+          "description": "Band 6 - Chlorophyll reference (minimum)",
+          "center_wavelength": 560,
+          "band_width": 10
+        }
+      ],
+      "file:checksum": "6ca161f4a305e816021847ff4c70fa94",
+      "file:local_path": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/Oa06_radiance.nc",
+      "file:size": 31943,
+      "roles": [
+        "data"
+      ]
+    },
+    "Oa07_radiance": {
+      "href": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/Oa07_radiance.nc",
+      "type": "application/x-netcdf",
+      "description": "TOA radiance for OLCI acquisition band Oa07",
+      "resolution": [
+        270,
+        294
+      ],
+      "eo:bands": [
+        {
+          "name": "Oa07",
+          "description": "Band 7 - Sediment loading",
+          "center_wavelength": 620,
+          "band_width": 10
+        }
+      ],
+      "file:checksum": "852f32bdf32d6b4e900388b2ac83eeb1",
+      "file:local_path": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/Oa07_radiance.nc",
+      "file:size": 31865,
+      "roles": [
+        "data"
+      ]
+    },
+    "Oa08_radiance": {
+      "href": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/Oa08_radiance.nc",
+      "type": "application/x-netcdf",
+      "description": "TOA radiance for OLCI acquisition band Oa08",
+      "resolution": [
+        270,
+        294
+      ],
+      "eo:bands": [
+        {
+          "name": "Oa08",
+          "description": "Band 8 - 2nd Chlorophyll absorption maximum, sediment, yellow substance / vegetation",
+          "center_wavelength": 665,
+          "band_width": 10
+        }
+      ],
+      "file:checksum": "8ddefc258622ee54b52368653e1264e7",
+      "file:local_path": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/Oa08_radiance.nc",
+      "file:size": 32471,
+      "roles": [
+        "data"
+      ]
+    },
+    "Oa09_radiance": {
+      "href": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/Oa09_radiance.nc",
+      "type": "application/x-netcdf",
+      "description": "TOA radiance for OLCI acquisition band Oa09",
+      "resolution": [
+        270,
+        294
+      ],
+      "eo:bands": [
+        {
+          "name": "Oa09",
+          "description": "Band 9 - Improved fluorescence retrieval",
+          "center_wavelength": 673.75,
+          "band_width": 7.5
+        }
+      ],
+      "file:checksum": "44ef04ebf472109559631c52c9936731",
+      "file:local_path": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/Oa09_radiance.nc",
+      "file:size": 32473,
+      "roles": [
+        "data"
+      ]
+    },
+    "Oa10_radiance": {
+      "href": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/Oa10_radiance.nc",
+      "type": "application/x-netcdf",
+      "description": "TOA radiance for OLCI acquisition band Oa10",
+      "resolution": [
+        270,
+        294
+      ],
+      "eo:bands": [
+        {
+          "name": "Oa10",
+          "description": "Band 10 - Chlorophyll fluorescence peak, red edge",
+          "center_wavelength": 681.25,
+          "band_width": 7.5
+        }
+      ],
+      "file:checksum": "1f9f9efe92f2b0f3147321294f04f515",
+      "file:local_path": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/Oa10_radiance.nc",
+      "file:size": 32599,
+      "roles": [
+        "data"
+      ]
+    },
+    "Oa11_radiance": {
+      "href": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/Oa11_radiance.nc",
+      "type": "application/x-netcdf",
+      "description": "TOA radiance for OLCI acquisition band Oa11",
+      "resolution": [
+        270,
+        294
+      ],
+      "eo:bands": [
+        {
+          "name": "Oa11",
+          "description": "Band 11 - Chlorophyll fluorescence baseline, red edge transition",
+          "center_wavelength": 708.75,
+          "band_width": 10
+        }
+      ],
+      "file:checksum": "da0499f9ab8c37bd77ce8bb60585734b",
+      "file:local_path": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/Oa11_radiance.nc",
+      "file:size": 32723,
+      "roles": [
+        "data"
+      ]
+    },
+    "Oa12_radiance": {
+      "href": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/Oa12_radiance.nc",
+      "type": "application/x-netcdf",
+      "description": "TOA radiance for OLCI acquisition band Oa12",
+      "resolution": [
+        270,
+        294
+      ],
+      "eo:bands": [
+        {
+          "name": "Oa12",
+          "description": "Band 12 - O2 absorption / clouds, vegetation",
+          "center_wavelength": 753.75,
+          "band_width": 7.5
+        }
+      ],
+      "file:checksum": "b3ed5c6f6cea3aeeebb2e492be143e57",
+      "file:local_path": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/Oa12_radiance.nc",
+      "file:size": 32834,
+      "roles": [
+        "data"
+      ]
+    },
+    "Oa13_radiance": {
+      "href": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/Oa13_radiance.nc",
+      "type": "application/x-netcdf",
+      "description": "TOA radiance for OLCI acquisition band Oa13",
+      "resolution": [
+        270,
+        294
+      ],
+      "eo:bands": [
+        {
+          "name": "Oa13",
+          "description": "Band 13 - O2 absorption / aerosol correction",
+          "center_wavelength": 761.25,
+          "band_width": 2.5
+        }
+      ],
+      "file:checksum": "8a0696ace5794d11d490a3e5edb2e2f8",
+      "file:local_path": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/Oa13_radiance.nc",
+      "file:size": 29908,
+      "roles": [
+        "data"
+      ]
+    },
+    "Oa14_radiance": {
+      "href": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/Oa14_radiance.nc",
+      "type": "application/x-netcdf",
+      "description": "TOA radiance for OLCI acquisition band Oa14",
+      "resolution": [
+        270,
+        294
+      ],
+      "eo:bands": [
+        {
+          "name": "Oa14",
+          "description": "Band 14 - Atmospheric correction",
+          "center_wavelength": 764.375,
+          "band_width": 3.75
+        }
+      ],
+      "file:checksum": "d95d5d6cb3e02d48994d786ee06c4f98",
+      "file:local_path": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/Oa14_radiance.nc",
+      "file:size": 31189,
+      "roles": [
+        "data"
+      ]
+    },
+    "Oa15_radiance": {
+      "href": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/Oa15_radiance.nc",
+      "type": "application/x-netcdf",
+      "description": "TOA radiance for OLCI acquisition band Oa15",
+      "resolution": [
+        270,
+        294
+      ],
+      "eo:bands": [
+        {
+          "name": "Oa15",
+          "description": "Band 15 - O2 absorption used for cloud top pressure, fluorescence over land",
+          "center_wavelength": 767.5,
+          "band_width": 2.5
+        }
+      ],
+      "file:checksum": "22ca33dbdf08c1e7e4e82a10e467b734",
+      "file:local_path": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/Oa15_radiance.nc",
+      "file:size": 32579,
+      "roles": [
+        "data"
+      ]
+    },
+    "Oa16_radiance": {
+      "href": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/Oa16_radiance.nc",
+      "type": "application/x-netcdf",
+      "description": "TOA radiance for OLCI acquisition band Oa16",
+      "resolution": [
+        270,
+        294
+      ],
+      "eo:bands": [
+        {
+          "name": "Oa16",
+          "description": "Band 16 - Atmospheric / aerosol correction",
+          "center_wavelength": 778.75,
+          "band_width": 15
+        }
+      ],
+      "file:checksum": "b435c5e6d777d98ec82a273d40e16fff",
+      "file:local_path": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/Oa16_radiance.nc",
+      "file:size": 32827,
+      "roles": [
+        "data"
+      ]
+    },
+    "Oa17_radiance": {
+      "href": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/Oa17_radiance.nc",
+      "type": "application/x-netcdf",
+      "description": "TOA radiance for OLCI acquisition band Oa17",
+      "resolution": [
+        270,
+        294
+      ],
+      "eo:bands": [
+        {
+          "name": "Oa17",
+          "description": "Band 17 - Atmospheric / aerosol correction, clouds, pixel co-registration",
+          "center_wavelength": 865,
+          "band_width": 20
+        }
+      ],
+      "file:checksum": "3b8e5801054ea3efee1ba55588158f89",
+      "file:local_path": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/Oa17_radiance.nc",
+      "file:size": 32803,
+      "roles": [
+        "data"
+      ]
+    },
+    "Oa18_radiance": {
+      "href": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/Oa18_radiance.nc",
+      "type": "application/x-netcdf",
+      "description": "TOA radiance for OLCI acquisition band Oa18",
+      "resolution": [
+        270,
+        294
+      ],
+      "eo:bands": [
+        {
+          "name": "Oa18",
+          "description": "Band 18 - Water vapour absorption reference. Common reference band with SLSTR. Vegetation monitoring",
+          "center_wavelength": 885,
+          "band_width": 10
+        }
+      ],
+      "file:checksum": "86af79d4de059ce90e62496a6719253a",
+      "file:local_path": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/Oa18_radiance.nc",
+      "file:size": 32906,
+      "roles": [
+        "data"
+      ]
+    },
+    "Oa19_radiance": {
+      "href": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/Oa19_radiance.nc",
+      "type": "application/x-netcdf",
+      "description": "TOA radiance for OLCI acquisition band Oa19",
+      "resolution": [
+        270,
+        294
+      ],
+      "eo:bands": [
+        {
+          "name": "Oa19",
+          "description": "Band 19 - Water vapour absorption, vegetation monitoring (maximum REFLECTANCE)",
+          "center_wavelength": 900,
+          "band_width": 10
+        }
+      ],
+      "file:checksum": "1ab00aab710bcdbe346f63c071d90be2",
+      "file:local_path": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/Oa19_radiance.nc",
+      "file:size": 32777,
+      "roles": [
+        "data"
+      ]
+    },
+    "Oa20_radiance": {
+      "href": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/Oa20_radiance.nc",
+      "type": "application/x-netcdf",
+      "description": "TOA radiance for OLCI acquisition band Oa20",
+      "resolution": [
+        270,
+        294
+      ],
+      "eo:bands": [
+        {
+          "name": "Oa20",
+          "description": "Band 20 - Water vapour absorption, atmospheric / aerosol correction",
+          "center_wavelength": 940,
+          "band_width": 20
+        }
+      ],
+      "file:checksum": "2569e44201b27670d36faca43a9d7985",
+      "file:local_path": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/Oa20_radiance.nc",
+      "file:size": 32196,
+      "roles": [
+        "data"
+      ]
+    },
+    "Oa21_radiance": {
+      "href": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/Oa21_radiance.nc",
+      "type": "application/x-netcdf",
+      "description": "TOA radiance for OLCI acquisition band Oa21",
+      "resolution": [
+        270,
+        294
+      ],
+      "eo:bands": [
+        {
+          "name": "Oa21",
+          "description": "Band 21 - Water vapour absorption, atmospheric / aerosol correction",
+          "center_wavelength": 1020,
+          "band_width": 40
+        }
+      ],
+      "file:checksum": "e23df69817922bb4dbbe9bf6afab6cf5",
+      "file:local_path": "S3B_OL_1_EFR____20230311T214926_20230311T214926_20230312T085631_0000_077_100_4320_PS2_O_NT_003.SEN3/Oa21_radiance.nc",
+      "file:size": 33021,
+      "roles": [
+        "data"
+      ]
+    }
+  },
+  "bbox": [
+    130.327,
+    -75.8885,
+    160.317,
+    -68.2309
+  ],
+  "stac_extensions": [
+    "https://stac-extensions.github.io/file/v2.1.0/schema.json",
+    "https://stac-extensions.github.io/sat/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/eo/v1.0.0/schema.json"
+  ]
+}

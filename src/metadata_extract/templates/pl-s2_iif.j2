@@ -1,0 +1,296 @@
+{#- jinja template for generating a S2 IIF with EOP model #}
+{#- #}
+{#- Variables: #}
+{#-   date        with the current ISO date string #}
+{#-   properties  with EOP naming convention #}
+{#-     ... and optional vendorSpecific ones [] #}
+{#-   product[filename,size,*host,*path,*account,checksum,checksumType,*checksumDate] #}
+{#-   *quicklook[filename,size,*host,*path,*account,checksum,checksumType,*checksumDate] #}
+{#-   coordinates in WKT POLYGON format #}
+{#-   plProcessingSystemID e.g. "lid://ProcessingSystem////S2/psm-sentinel2-ingestion/1.0" #}
+{#- #}
+{%- set identifier = properties['identifier'].Value %}
+{%- set mission = identifier[:2] %}
+{%- set sensor = properties['eop:instrumentShortName'].Value %}
+{%- set code = 'L' + properties['eop:processingLevel'].Value %}
+{%- set collection = mission + '.' + sensor + '.' + code %}
+{#- #}
+{%- if properties['gml:endPosition'].Value == properties['gml:beginPosition'].Value %}
+{%- set beginPosition = properties['gml:beginPosition'].Value %}
+{%- set endPosition = properties['gml:endPosition'].Value %}
+{%- else %}
+{%- set beginPosition = properties['gml:endPosition'].Value %}
+{%- set endPosition = properties['gml:beginPosition'].Value %}
+{%- endif %}
+{#- #}
+{%- set safe = ENV.get('safe') %}
+{%- set uuid = ENV.get('uuid') %}
+{%- set md5hash = ENV.get('md5hash') %}
+{#- #}
+{%- macro FEATURE(key, attribute='', indent='', defaultValue=None) -%}
+  {%- if not attribute -%}{% set attribute=key %}{% endif -%}
+  {%- if properties[attribute] -%}
+    {%- if defaultValue -%}
+{{ indent }}<feature key="{{ key }}">{{ properties[attribute].Value | default(defaultValue) }}</feature>{% else -%}
+{{ indent }}<feature key="{{ key }}">{{ properties[attribute].Value }}</feature>
+    {%- endif -%}
+  {%- else -%}
+{{ indent }}<!-- {% if key == attribute %}{{ key }}{% else %}{{ key }}={{ attribute }}{% endif %} -->
+  {%- endif -%}
+{%- endmacro %}
+{#- #}
+{%- macro VENDOR_SPECIFIC(key, attribute='', indent='    ') -%}
+  {%- if not attribute -%}{% set attribute=key %}{% endif -%}
+  {%- if properties[attribute] -%}
+    <feature key="vendorSpecific">
+{{ indent }}  <feature key="localAttribute">{{ key }}</feature>
+{{ indent }}  <feature key="localValue">{{ properties[attribute].Value }}</feature>
+{{ indent }}</feature>
+  {%- endif -%}
+{%- endmacro %}
+{#- -#}
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<IIF>
+ <item>
+  <administration>
+    <id>(rid://{{ collection }})</id>
+    <type>{{ collection }}</type>
+    <keys>
+      <feature key="beginPosition">{{ beginPosition }}</feature>
+      <feature key="endPosition">{{ endPosition }}</feature>
+      {{ FEATURE('identifier','identifier') }}
+    </keys>
+    <owner>DIMS</owner>
+    <group>DIMS</group>
+    <permission>
+      <ownerRights>VIEW</ownerRights>
+      <ownerRights>READ</ownerRights>
+      <ownerRights>WRITE</ownerRights>
+      <ownerRights>DELETE</ownerRights>
+      <groupRights>VIEW</groupRights>
+      <groupRights>READ</groupRights>
+      <groupRights>WRITE</groupRights>
+      <worldRights>VIEW</worldRights>
+      <worldRights>READ</worldRights>
+    </permission>
+    <location>DPA</location>
+    <permanency>PERMANENT</permanency>
+  </administration>
+  <commandOption>
+    <action>INSERT</action>
+    <implicitVersion>true</implicitVersion>
+    <transfer>COPY</transfer>
+  </commandOption>
+  <fileInformation>
+  </fileInformation>
+  <components>
+    <component>
+      <type>S2.MSI.L1C-PRIM</type>
+      <name/>
+      <role>PRIM</role>
+      <ref>$((rid://{{ collection }}-PRIM))</ref>
+    </component>
+  </components>
+  <parameters>
+    <availability>EXISTING</availability>
+    <reliability>REAL</reliability>
+    <quality>APPROVED</quality>
+    <revision>1.0</revision>
+    <sphere>earth</sphere>
+    <spatialCoverage>
+      {%- if properties['coordinates'] %}
+      <boundingPolygon>
+        {%- set coords = properties['coordinates'].Value.replace('POLYGON((','').replace('))','').split(', ') -%}
+        {%- if coords[0] == coords[(coords | length) - 1] %}
+        {%- set coords = coords[:(coords | length) - 1] %}{# drop duplicate closing coordinate #}
+        {%- endif %}
+        {%- for coord in coords %}
+        <point>
+          {%- set point = coord.split(' ') %}
+          <latitude>{{ point[1] }}</latitude>
+          <longitude>{{point[0] }}</longitude>
+        </point>
+        {%- endfor %}
+      </boundingPolygon>
+      {%- endif %}
+    </spatialCoverage>
+    <altitudeCoverage />
+    <temporalCoverage>
+      <startTime>{{ beginPosition }}</startTime>
+      <stopTime>{{ endPosition }}</stopTime>
+    </temporalCoverage>
+    <creation>
+      <creator>$(({{ plProcessingSystemID | default('lid://ProcessingSystem////S2/psm-sentinel2-ingestion/1.0') }}))</creator>
+      <time>{{ date }}</time>
+      <site>EOC</site>
+    </creation>
+    <predecessor />
+    <auxiliary />
+  </parameters>
+  <specificParameters>
+    {{ FEATURE('uid','uuid') }}
+    <feature key="beginPosition">{{ beginPosition }}</feature>
+    <feature key="endPosition">{{ endPosition }}</feature>
+    <feature key="timePosition">{{ properties['eop:timePosition'] | default(properties['eop:processingDate'].Value) }}</feature>
+    <feature key="platform">
+      {{ FEATURE('shortName','eop:platformShortName') }}
+      {{ FEATURE('serialIdentifier','eop:platformSerialIdentifier') }}
+      {{ FEATURE('orbitType','eop:platformOrbitType') }}
+    </feature>
+    <feature key="instrument">
+      {{ FEATURE('shortName','eop:instrumentShortName') }}
+      {{ FEATURE('description','eop:instrumentDescription') }}
+      {{ FEATURE('instrumentType','eop:instrumentType') }}
+    </feature>
+    <feature key="sensor">
+      {{ FEATURE('sensorType','eop:sensorType') }}
+      {{ FEATURE('operationalMode','eop:sensorOperationalMode') }}
+      {{ FEATURE('resolution','eop:sensorResolution') }}
+      {{ FEATURE('swathIdentifier','eop:swathIdentifier') }}
+    </feature>
+    {{ FEATURE('relativeOrbitNumber','eop:relativeOrbitNumber') }}
+    {{ FEATURE('orbitNumber','eop:orbitNumber') }}
+    {{ FEATURE('lastOrbitNumber','eop:lastOrbitNumber') }}
+    {{ FEATURE('orbitDirection','eop:orbitDirection') }}
+    {{ FEATURE('wrsLongitudeGrid','eop:tileId') }}
+    {{ FEATURE('ascendingNodeDate','wrs:ascendingNodeDate') }}
+    {{ FEATURE('startTimeFromAscendingNode','wrs:startTimeFromAscendingNode') }}
+    {{ FEATURE('completionTimeFromAscendingNode','wrs:completionTimeFromAscendingNode') }}
+    {{ FEATURE('orbitDuration','eop:orbitDuration') }}
+    {{ FEATURE('cloudCoverPercentage','opt:cloudCoverPercentage') }}
+    <feature key="product">
+      {{ FEATURE('filename') }}
+      {{ FEATURE('referenceSystemIdentifier','srs') }}
+      {{ FEATURE('version','eop:procesorVersion') }}
+      {{ FEATURE('size','contentLength') }}
+    </feature>
+    {%- for checksum in properties['checksums'] %}
+    <feature key="checksum">
+      <feature key="algorithm">{{ checksum.Algorithm | default('MD5') }}</feature>
+      <feature key="value">{{ checksum.Value }}</feature>
+      <feature key="date">{{ checksum.ChecksumDate | default(date) }}</feature>
+    </feature>
+    {%- endfor %}
+    {{ FEATURE('identifier','identifier') }}
+    {{ FEATURE('doi','eop:doi') }}
+    {{ FEATURE('acquisitionType','eop:acquisitionType') }}
+    {{ FEATURE('productType','eop:productType') }}
+    {{ FEATURE('status','eop:status') }}
+    <feature key="downlinkedTo">
+      {{ FEATURE('acquisitionDate','eop:acquisitionDate') }}
+      {{ FEATURE('acquisitionStation','eop:acquisitionStation') }}
+    </feature>
+    <feature key="archivedIn">
+      <feature key="archivingCenter">EOC</feature>
+      <feature key="archivingDate">#((rid://{{ collection }},insertionTime))</feature>
+      <feature key="archivingIdentifier">#((rid://{{ collection }},id))</feature>
+      {#- FEATURE('archivingCenter','eop:archivingCenter') #}
+      {#- FEATURE('archivingDate','eop:archivingDate') #}
+      {#- FEATURE('archivingIdentifier','eop:archivingIdentifier') #}
+    </feature>
+    <feature key="processing">
+      {{ FEATURE('processingCenter','eop:processingCenter') }}
+      {{ FEATURE('processingDate','eop:processingDate') }}
+      {{ FEATURE('compositeType','eop:compositeType') }}
+      {{ FEATURE('method','eop:processingMethod') }}
+      {{ FEATURE('methodVersion','eop:processingMethodVersion') }}
+      {{ FEATURE('processorName','eop:processorName') }}
+      {{ FEATURE('processorVersion','eop:processorVersion') }}
+      {{ FEATURE('processingLevel','eop:processingLevel') }}
+      {{ FEATURE('processingMode','eop:processingMode') }}
+      {# {{ FEATURE('nativeProductFormat','eop:nativeProductFormat','','SAFE') }} -#}
+      <feature key="nativeProductFormat">SAFE</feature>
+      {%- for f in properties['eop:auxiliaryDataSetFileNames'] %}
+      <feature key="auxiliaryDataSetFileName">{{ f }}</feature>
+      {%- endfor %}
+    </feature>
+    <feature key="creationDate">{{ date }}</feature>
+    {{ VENDOR_SPECIFIC('PRODUCT_URI','s2msi:productUri') }}
+    {{ VENDOR_SPECIFIC('DATATAKE_TYPE','s2msi:dataTakeType') }}
+    {{ VENDOR_SPECIFIC('Reflectance_Conversion','s2msi:reflectanceConversion') }}
+    {{ VENDOR_SPECIFIC('PRODUCTION_DEM_TYPE','s2msi:productionDEMtype') }}
+    {{ VENDOR_SPECIFIC('DEGRADED_ANC_DATA_PERCENTAGE','s2msi:degradedANCdataPercentage') }}
+    {{ VENDOR_SPECIFIC('DEGRADED_MSI_DATA_PERCENTAGE','s2msi:degradedMSIdataPercentage') }}
+    {{ VENDOR_SPECIFIC('s2msi:datastripId') }}
+    {{ VENDOR_SPECIFIC('s2msi:illuminationZenithAngle') }}
+    {{ VENDOR_SPECIFIC('s2msi:productGroupId') }}
+    {{ VENDOR_SPECIFIC('s2msi:productionDEMtype') }}
+    {{ VENDOR_SPECIFIC('s2msi:qualityStatus') }}
+    {{ VENDOR_SPECIFIC('s2msi:tileId') }}
+    {{ VENDOR_SPECIFIC('sourceArchivingDate','eop:archivingDate') }}
+    {{ VENDOR_SPECIFIC('sourceArchivingIdentifier','eop:archivingIdentifier') }}
+  </specificParameters>
+  </item>
+  <item>
+    <administration>
+      <id>(rid://{{ collection }}-PRIM)</id>
+        <type>{{ collection }}-PRIM</type>
+        <keys>#((rid://{{ collection }}))</keys>
+        <owner>DIMS</owner>
+        <group>DIMS</group>
+        <permission>#((rid://{{ collection }}))</permission>
+        <location>OP</location>
+        <permanency>PERMANENT</permanency>
+      </administration>
+      <commandOption>
+        <action>INSERT</action>
+        <implicitVersion>false</implicitVersion>
+        <transfer>COPY</transfer>
+      </commandOption>
+    <components/>
+    <fileInformation>
+      <file>
+        <location>
+          <host>{{ product.host | default('.') }}</host>
+          <path>{{ product.path | default('.') }}</path>
+          <name>{{ product.filename }}</name>
+          <account>{{ product.account | default('.') }}</account>
+        </location>
+        <size>
+          <value>{{ product.size }}</value>
+          <unit>Byte</unit>
+          <bytesPerUnit>1</bytesPerUnit>
+        </size>
+      </file>
+    </fileInformation>
+    <parameters>#((rid://{{ collection }}))</parameters>
+    <specificParameters/>
+  </item>
+  {%- if quicklook %}
+  <item>
+    <administration>
+      <id>(rid://{{ collection }}-QL)</id>
+        <type>{{ collection }}-QL</type>
+        <keys>#((rid://{{ collection }}))</keys>
+        <owner>DIMS</owner>
+        <group>DIMS</group>
+        <permission>#((rid://{{ collection }}))</permission>
+        <location>OP</location>
+        <permanency>PERMANENT</permanency>
+      </administration>
+      <commandOption>
+        <action>INSERT</action>
+        <implicitVersion>false</implicitVersion>
+        <transfer>COPY</transfer>
+      </commandOption>
+    <components/>
+    <fileInformation>
+      <file>
+        <location>
+          <host>{{ quicklook.host | default('.') }}</host>
+          <path>{{ quicklook.path | default('.') }}</path>
+          <name>{{ quicklook.filename }}</name>
+          <account>{{ quicklook.account | default('.') }}</account>
+        </location>
+        <size>
+          <value>{{ quicklook.size }}</value>
+          <unit>Byte</unit>
+          <bytesPerUnit>1</bytesPerUnit>
+        </size>
+      </file>
+    </fileInformation>
+    <parameters>#((rid://{{ collection }}))</parameters>
+    <specificParameters/>
+  </item>
+  {%- endif %}
+</IIF>

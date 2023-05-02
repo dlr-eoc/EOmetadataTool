@@ -1,0 +1,104 @@
+{
+  "stac_version": "1.0.0-rc.1",
+  {%- set metadata = extract(filename, 'mappings/TSX.csv', dictFiller) %}
+  {#- %- set sha256sum = sha256sum(filename) %#}
+  {#- %- set md5sum = md5sum(filename) %#}
+  {% set size = filesize(filename) %}
+  "stac_extensions": [
+  {#- "https://stac-extensions.github.io/eo/v1.0.0/schema.json", #}
+    "https://stac-extensions.github.io/sar/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/sat/v1.0.0/schema.json",
+  {#- "https://stac-extensions.github.io/scientific/v1.0.0/schema.json", #}
+    "https://stac-extensions.github.io/view/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/version/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/timestamps/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/processing/v1.0.0/schema.json"
+  ],
+  "id": "{{ metadata.id }}",
+  "type": "Feature",
+  "bbox": {{ metadata.bbox }},
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": {{ metadata.coordinates }}
+  },
+  "properties": {
+    "version": "1",
+    "title": "{{ metadata.title }}",
+    "datetime": "{{ metadata.datetime }}",
+    "start_datetime": "{{ metadata.start_datetime }}",
+    "end_datetime": "{{ metadata.end_datetime }}",
+    "created": "{{ metadata.created }}",
+    "updated": "{{ now }}",
+    "published": "{{ metadata.published }}",
+    {#- "expires": "2025-01-01T00:00:00Z", #}
+    {#- "sci:doi": "10.5061/dryad.s2v81.2/27.2", #}
+    "platform": "{{ metadata.platform }}",
+    "instruments": ["{{ metadata.instruments }}"],
+    "constellation": "{{ metadata.constellation }}",
+    "gsd": {{ metadata.gsd }},
+    {# "view:off_nadir": 0, -#}
+    {# "view:incidence_angle": 90, -#}
+    {# "view:azimuth": 23.9,-#}
+    {# "view:sun_elevation": 45.0, -#}
+    {# "view:sun_azimuth": 56.4, -#}
+    "sat:platform_international_designator": "{{ metadata['sat:platform_international_designator'] }}",
+    "sat:orbit_state": "{{ metadata['sat:orbit_state'] }}",
+    "sat:absolute_orbit": {{ metadata['sat:absolute_orbit'] }},
+    "sat:relative_orbit": {{ metadata['sat:relative_orbit'] }},
+    "sat:anx_datetime": "{{ metadata['sat:anx_datetime'] }}",
+    {# "tsx:frame": 1801234, -#}
+    "tsx:beam": "{{ metadata['tsx:beam'] }}",
+    "tsx:antennaLookDirection": "{{ metadata['tsx:antennaLookDirection'] }}",
+    "tsx:antennaReceiveConfiguration": "{{ metadata['tsx:antennaReceiveConfiguration'] }}",
+    "tsx:polarisationMode": "{{ metadata['tsx:polarisationMode'] }}",
+    "sar:instrument_mode": "{{ metadata['sar:instrument_mode'] }}",
+    "sar:polarizations": ["{{ metadata['sar:polarizations'] }}"],
+    "sar:resolution_range": {{ metadata['sar:resolution_range'] }},
+    "sar:resolution_azimuth": {{ metadata['sar:resolution_azimuth'] }},
+    "sar:pixel_spacing_range": {{ metadata['sar:pixel_spacing_range'] }},
+    "sar:pixel_spacing_azimuth": {{ metadata['sar:pixel_spacing_azimuth'] }},
+    "sar:looks_range": {{ metadata['sar:looks_range'] }},
+    "sar:looks_azimuth": {{ metadata['sar:looks_azimuth'] }},
+    "sar:looks_equivalent_number": {{ metadata['sar:looks_equivalent_number'] }},
+    "sar:frequency_band": "{{ metadata['sar:frequency_band'] }}",
+    "sar:center_frequency": {{ metadata['sar:center_frequency'] }},
+    "sar:product_type": "{{ metadata['sar:product_type'] }}",
+    "processing:lineage": "{{ metadata['processing:lineage'] }}",
+    "processing:level": "{{ metadata['processing:level'] }}",
+    "processing:facility": "{{ metadata['processing:facility'] }}",
+    "processing:software": {
+      "{{ metadata['processing:name'] }}": "{{ metadata['processing:version'] }}"
+    }
+  },
+  "assets": {
+    "tsx-geohazard-supersites-product": {
+      "href": "{{ filename.split('/') | last }}",
+      "type": "application/x-gtar",
+      "title": "{{ metadata.product_name }}",
+      "created": "2018-10-02T00:00:00Z",
+      "size": {{ size }}
+{#-,
+      "checksums": {
+          "md5": "{{ md5sum }}",
+          "sha256": "{{ sha256sum }}"
+        }
+#}
+    }
+  }
+{#,
+  "links": [
+    {
+      "rel": "self",
+      "href": "https://datadryad.org/resource/doi:10.5061/dryad.s2v81/item.json"
+    },
+    {
+      "rel": "root",
+      "href": "https://datadryad.org/resource/doi:10.5061/dryad.s2v81/catalog.json"
+    },
+    {
+      "rel": "cite-as",
+      "href": "https://doi.org/10.5061/dryad.s2v81.2/27.2"
+    }
+  ]
+-#}
+}

@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<IIF>
+{%- set a = attributes -%}
+{%- set collection = a.Collection.Value -%}
+{%- macro FEATURE(key, attribute='', indent='') -%}
+  {%- if not attribute -%}
+    {%- set attribute=key -%}
+  {%- endif -%}
+  {%- if a[attribute] -%}
+{{ indent }}<feature key="{{ key }}">{{ a[attribute].Value }}</feature>{%- else -%}
+{{ indent }}<!-- {{ key }} -->{% endif -%}
+{%- endmacro %}
+{%- macro sentence_case(text) -%}
+    {{ text[0] | upper }}{{ text[1:] | lower }}
+{%- endmacro %}
+ <item>
+  <administration>
+    <id>(rid://{{ collection }})</id>
+    <type>{{ collection }}</type>
+    <keys>
+      <feature key="originalName">{{ a.filename.Value.replace('.SEN3','').replace('.zip','') ~ '.SEN3' }}</feature>
+      <feature key="revision">0.1</feature>
+    </keys>
+    <owner>DIMS</owner>
+    <group>DIMS</group>
+    <permission>
+      <ownerRights>VIEW</ownerRights>
+      <ownerRights>READ</ownerRights>
+      <ownerRights>WRITE</ownerRights>
+      <ownerRights>DELETE</ownerRights>
+      <groupRights>VIEW</groupRights>
+      <groupRights>READ</groupRights>
+      <groupRights>WRITE</groupRights>
+      <worldRights>VIEW</worldRights>
+      <worldRights>READ</worldRights>
+    </permission>
+    <location>OP</location>
+    <permanency>PERMANENT</permanency>
+  </administration>
+  <commandOption>
+    <action>INSERT</action>
+    <implicitVersion>false</implicitVersion>
+    <transfer>COPY</transfer>
+  </commandOption>
+  <fileInformation>
+    <file>
+      <location>
+        <host>.</host>
+        <path>.</path>
+        <name>{{ a.filename.Value }}</name>
+        <account>.</account>
+        <checksumAlgorithm>{{ a.checksums[0].Algorithm if a["checksums"] }}</checksumAlgorithm>
+        <checksumValue>{{ a.checksums[0].Value if a["checksums"] }}</checksumValue>
+      </location>
+      <size>
+        <value>{{ a.contentLength.Value }}</value>
+        <unit>byte</unit>
+        <bytesPerUnit>1</bytesPerUnit>
+      </size>
+    </file>
+  </fileInformation>
+  {#-
+  <components>
+    <component>
+      <type>{{ collection }}</type>
+      <name/>
+      <role>PRIM</role>
+      <ref>$((rid://${collection}-PRIM))</ref>
+    </component>
+  </components>
+  #}
+  <parameters>
+    <availability>EXISTING</availability>
+    <reliability>REAL</reliability>
+    <quality>APPROVED</quality>
+    <revision>1.0</revision>
+    <sphere>earth</sphere>
+    {% if a.coordinates -%}
+    <spatialCoverage>
+      {% if a.coordinates.Value.startswith('LINESTRING') -%}
+      {%- set coords = a.coordinates.Value.replace('LINESTRING(','').replace(',','').replace(')','').split(' ') -%}
+      <boundingBox>
+        <westBoundingCoordinate>{{ coords[2] }}</westBoundingCoordinate>
+        <southBoundingCoordinate>{{ coords[1] }}</southBoundingCoordinate>
+        <eastBoundingCoordinate>{{ coords[0] }}</eastBoundingCoordinate>
+        <northBoundingCoordinate>{{ coords[3] }}</northBoundingCoordinate>
+      </boundingBox>
+      {%- else -%}
+      {%- set points = a.coordinates.Value.replace('POLYGON((','').replace('))','').split(', ') -%}
+      <boundingPolygon>
+        {% for point in points -%}
+        {%- set point = point.split(' ') -%}
+        {%- if not loop.last -%}{#- skip closing polygon point in IIF -#}
+        <point>
+          <latitude>{{ point[1] }}</latitude>
+          <longitude>{{ point[0] }}</longitude>
+        </point>
+        {% endif %}
+        {%- endfor %}
+      </boundingPolygon>
+      {%- endif %}
+    </spatialCoverage>
+    {%- else -%}
+    <spatialCoverage>
+      <isGlobal>true</isGlobal>
+    </spatialCoverage>
+    {%- endif %}
+    <altitudeCoverage />
+    <temporalCoverage>
+      <startTime>{{ a.beginningDateTime.Value }}</startTime>
+      <stopTime>{{ a.endingDateTime.Value if a.endingDateTime else a.beginningDateTime.Value }}</stopTime>
+    </temporalCoverage>
+    <creation>
+{#-
+      <!-- IF USING IIF FOR INSERTING PRODUCT INTO PL -->
+      <!-- PLEASE ENSURE THAT CREATOR IS NOT EXISTING -->
+      <!-- OTHERWISE INSERT A VALID VALUE             -->
+      <!-- <creator>$((lid://*PLEASE INSERT A VALID VALUE*))</creator>-->
+#}
+      <time>{{ a.publicationDate.Value.replace('Z', '') }}</time>
+      <site>OP</site>
+    </creation>
+    {# <predecessor /> -#}
+    {# <auxiliary /> -#}
+  </parameters>
+  <specificParameters>
+    {{ FEATURE('baselineCollection') }}
+    {# FEATURE('beginningDateTime') -#}
+    {{ FEATURE('brightCover') }}
+    {{ FEATURE('cloudCover') }}
+    {{ FEATURE('coastalCover') }}
+    <feature key="contentType">application/octet-stream</feature>
+    {# FEATURE('contentLength') = totalSize -#}
+    {{ FEATURE('cycleNumber') }}
+    <feature key="dataTypeId">{{ a.filename.Value[9:14] }}</feature>
+    <feature key="dataTypeSuffix">{{ a.filename.Value[14:16] }}</feature>
+    {# FEATURE('endingDateTime') -#}
+    {{ FEATURE('filename') }}
+    {# FEATURE('footprint', 'coordinates') -#}
+    {{ FEATURE('freshInlandWaterCover') }}
+    {{ FEATURE('insertionTime', 'modificationDate') }}
+    {# FEATURE('instrumentShortName') = sensor -#}
+    {{ FEATURE('landCover') }}
+    {{ FEATURE('lastOrbitDirection', 'orbitDirection') }}
+    {{ FEATURE('lastOrbitNumber', 'orbitNumber') }}
+    {{ FEATURE('lastRelativeOrbitNumber', 'relativeOrbitNumber') }}
+    <feature key="mission">{{ a.filename.Value[0:3] }}</feature>
+    {# FEATURE('name', 'identifier') -#}
+    {{ FEATURE('orbitNumber') }}
+    {{ FEATURE('orbitDirection') }}
+    {{ FEATURE('originDate') }}
+    {# FEATURE('platformSerialIdentifier') = serialIdentifier -#}
+    {# FEATURE('platformShortName') = shortName -#}
+    <feature key="processingCenter">{{ a.processingCenter.Value[0:20] }}</feature>
+    {# FEATURE('processingDate') = versionTime -#}
+    {{ FEATURE('processingLevel') }}
+    {{ FEATURE('processorName') }}
+    {{ FEATURE('processorVersion') }}
+    {{ FEATURE('productType') }}
+    {{ FEATURE('publicationDate') }}
+    {{ FEATURE('relativeOrbitNumber') }}
+    {{ FEATURE('salineWaterCover') }}
+    <feature key="satelliteId">S{{ a.filename.Value[1] }}</feature>
+    {{ FEATURE('sensor', 'instrumentShortName') }}
+    {{ FEATURE('operationalMode') }}
+    {{ FEATURE('serialIdentifier', 'platformSerialIdentifier') }}
+    {{ FEATURE('shortName', 'platformShortName') }}
+    {{ FEATURE('tidalRegionCover') }}
+    {{ FEATURE('timeliness') }}
+    {{ FEATURE('totalSize', 'contentLength') }}
+    {{ FEATURE('uid', 'uuid') }}
+    {{ FEATURE('versionTime', 'processingDate') }} 
+    <feature key="checksum">
+      <feature key="algorithm">{{ a.checksums[0].Algorithm if a["checksums"] }}</feature>
+      <feature key="value">{{ a.checksums[0].Value if a["checksums"] }}</feature>
+      <feature key="date">{{ a.checksums[0].ChecksumDate if a["checksums"] }}</feature>
+    </feature>
+  </specificParameters>
+{#
+ </item>
+  <item>
+    <administration>
+      <id>(rid://${collection}-PRIM)</id>
+        <type>${collection}-PRIM</type>
+        <keys>#((rid://$collection))</keys>
+        <owner>DIMS</owner>
+        <group>DIMS</group>
+        <permission>#((rid://$collection))</permission>
+        <location>OP</location>
+        <permanency>PERMANENT</permanency>
+      </administration>
+      <commandOption>
+        <action>INSERT</action>
+        <implicitVersion>false</implicitVersion>
+        <transfer>COPY</transfer>
+      </commandOption>
+    <components/>
+    <fileInformation>
+      <file>
+        <location>
+          <host>.</host>
+          <path>.</path>
+          <name>$primaryFile.getName()</name>
+          <account>.</account>
+        </location>
+        <size>
+          <value>$!xmlContext.getValue( '//eop:product//eop:size' )</value>
+          <unit>Byte</unit>
+          <bytesPerUnit>1</bytesPerUnit>
+        </size>
+      </file>
+    </fileInformation>
+    <parameters>#((rid://$collection))</parameters>
+    <specificParameters/>
+{% for attribute in attributes -%}
+{{ attribute }} {{ attributes[attribute].Type }} {{ attributes[attribute].Value }}
+{% endfor %}
+-#}
+ </item>
+</IIF>
