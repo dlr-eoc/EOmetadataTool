@@ -1,7 +1,14 @@
 # EOmetadataTool
 Table controlled Earth Observation metadata extractor and STAC tool
 
-*NOTE: the code for this repository will soon be published.*
+## Capabilities
+* reads metadata from files in multiple formats like zip, gzip, tar, SAFE, NetCDF, or directory tree;
+* extracts product metadata from one or more files;
+* attribute list and extraction rules specified in a CSV file
+* uses XPath expressions for the metadata extraction;
+* adds XPath functions extensions for common text manipulations: join, regex, map, uppercase, date;
+* creates any desired output format like STAC, EOP XML, JSON [23] using a jinja [22] template;
+* allows using the tool as a python API to embed it in other applications.
 
 ## Usage
 Example calls
@@ -21,11 +28,6 @@ Example calls
     --mapping src/metadata_extract/mappings/S5P_TROPOMI_L2.csv \
     --template src/metadata_extract/templates/s5p_l2_stack.j2
   ```
-
-## Capabilities
-* Loading of CSV mapping file
-* Read directly from zip, tar, tar.gz, tgz, nc based on file extension
-* XPath extension functions
 
 ## Important to know
 * Coordinates are in the format "Latitude,Longitude" (this is the default order for Sentinel-1 metadata). Points are separated by space. This order needs be reversed for GeoJSON output (e.g., for geoserver product.json/granules.json)
