@@ -1,0 +1,66 @@
+{#- template to transform an MetadataExtract output to a ODMS-PRI JSON input #}
+{#- #}
+{%- macro VALUE(key) %}{{ attributes.get(key).Value }}{% endmacro %}
+{#- #}
+{
+    "Id": "{{ VALUE('uuid') }}",
+    "Name": "{{ VALUE('filename') }}",
+    "ContentType": "application/octet-stream",
+    "ContentLength": {{ VALUE('contentLength') }},
+    "Archived": false,
+    "SourceCollection": "{{ VALUE('Collection') }}",
+    "SourceId": "{{ VALUE('uuid') }}",
+    "OriginDate": "{{ VALUE('publicationDate') }}",
+    "PublicationDate": "{{ VALUE('publicationDate') }}",
+    "Online": false,
+    "EvictionDate": "2024-12-31T00:00:00.000Z",
+    "Collection": "{{ VALUE('Collection') }}",
+    "ProductType": "{{ VALUE('productType') }}",
+    "PlatformShortName": "{{ VALUE('platformShortName') }}",
+    "PlatformSerialIdentifier": "{{ VALUE('platformSerialIdentifier') }}",
+    "ContentDateStart": "{{ VALUE('beginningDateTime') }}",
+    "ContentDateEnd": "{{ VALUE('endingDateTime') if VALUE('endingDateTime') else VALUE('beginningDateTime') }}",
+    {%- if attributes["coordinates"] %}
+    "Footprint": "{{ attributes["coordinates"].Value }}",
+    {%- endif %}
+    {%- if attributes["checksums"] %}
+    "Checksums": [
+        {% set sep = joiner(",") %}
+        {%- for checksum in attributes["checksums"] %}
+        {{- sep() }}{
+            "Algorithm": "{{ checksum.Algorithm }}",
+            "Value": "{{ checksum.Value }}"
+            {%- if checksum.ChecksumDate %},
+            "ChecksumDate": "{{ checksum.ChecksumDate }}"
+            {%- endif %}
+        }
+        {%- endfor %}
+    ],
+    {% endif -%}
+
+    "Attributes": [
+        {% set sep = joiner(",") %}
+        {%- for key in 'identifier', 'productType', 
+            'beginningDateTime', 'endingDateTime',
+            'platformShortName', 'platformSerialIdentifier',
+            'instrumentShortName', 'instrumentConfigurationID', 'operationalMode', 'baselineCollection',
+            'productClass', 'productConsolidation', 'productGeneration', 'timeliness',
+            'processingCenter', 'processingDate', 'processingLevel', 'processorName', 'processorVersion',
+            'sliceNumber', 'sliceProductFlag', 'swathIdentifier',
+            'startTimeFromAscendingNode', 'completionTimeFromAscendingNode',
+            'polarisationChannels', 'timeliness',
+            'cloudCover', 'tileId', 'datastripId', 'productGroupId', 'illuminationZenithAngle',
+            'cycleNumber', 'datatakeID',
+            'orbitDirection', 'lastOrbitDirection',
+            'orbitNumber', 'lastOrbitNumber',
+            'relativeOrbitNumber', 'lastRelativeOrbitNumber',
+            'qualityInfo', 'qualityStatus' %}
+        {%- if attributes[key] -%}{{ sep() }}{
+          "Name" : "{{ key }}",
+          "Value": {{ attributes[key].Value | tojson() }},
+          "Type" : "{{ attributes[key].Type }}"
+        }
+        {%- endif -%}
+    {%- endfor %}
+    ]
+}
