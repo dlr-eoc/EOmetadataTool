@@ -16,9 +16,9 @@ tidalRegionCover;xfdumanifest.xml;//syn:synProductInformation/syn:classification
 landCover;xfdumanifest.xml;//syn:synProductInformation/syn:classificationSummary/sentinel3:landPixels/@percentage;Double
 cloudCover;xfdumanifest.xml;//syn:synProductInformation/syn:classificationSummary/sentinel3:cloudyPixels/@percentage;Double
 orbitNumber;xfdumanifest.xml;//sentinel-safe:orbitReference/sentinel-safe:orbitNumber/text();Int64
-orbitDirection;xfdumanifest.xml;//sentinel-safe:orbitReference/sentinel-safe:orbitNumber[1]/@groundTrackDirection;uppercase
+orbitDirection;xfdumanifest.xml;uppercase(//sentinel-safe:orbitReference/sentinel-safe:orbitNumber[1]/@groundTrackDirection);String
 lastOrbitNumber;xfdumanifest.xml;//sentinel-safe:orbitReference/sentinel-safe:orbitNumber[2]/text();Int64
-lastOrbitDirection;xfdumanifest.xml;//sentinel-safe:orbitReference/sentinel-safe:orbitNumber[2]/@groundTrackDirection;uppercase
+lastOrbitDirection;xfdumanifest.xml;uppercase(//sentinel-safe:orbitReference/sentinel-safe:orbitNumber[2]/@groundTrackDirection);String
 relativeOrbitNumber;xfdumanifest.xml;//sentinel-safe:orbitReference/sentinel-safe:relativeOrbitNumber/text();Int64
 cycleNumber;xfdumanifest.xml;//sentinel-safe:orbitReference/sentinel-safe:cycleNumber/text();Int64
 processingLevel;xfdumanifest.xml;//sentinel-safe:processing/@outputLevel;String
@@ -26,4 +26,4 @@ processingDate;xfdumanifest.xml;//sentinel-safe:processing/@start;DateTimeOffset
 processingCenter;xfdumanifest.xml;//sentinel-safe:processing/sentinel-safe:facility/@site;String
 processorName;xfdumanifest.xml;//sentinel-safe:processing/sentinel-safe:facility/sentinel-safe:software/@name;String
 processorVersion;xfdumanifest.xml;//sentinel-safe:processing/sentinel-safe:facility/sentinel-safe:software/@version;String
-coordinates;xfdumanifest.xml;//sentinel-safe:frameSet/sentinel-safe:footPrint/gml:posList/text();WKT
+coordinates;xfdumanifest.xml;WKT(//sentinel-safe:frameSet/sentinel-safe:footPrint/gml:posList/text());String

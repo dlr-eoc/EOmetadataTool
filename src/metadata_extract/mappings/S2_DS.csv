@@ -5,8 +5,8 @@ processingDate;Inventory_Metadata.xml;//general:Generation_Time/text();DateTimeO
 beginningDateTime;Inventory_Metadata.xml;//general:Validity_Start/text();DateTimeOffset
 endingDateTime;Inventory_Metadata.xml;//general:Validity_Stop/text();DateTimeOffset
 orbitNumber;Inventory_Metadata.xml;//general:Start_Orbit_Number/text();Int64
-coordinates;Inventory_Metadata.xml;//general:Geographic_Localization/general:List_Of_Geo_Pnt/general:Geo_Pnt;Geo_Pnt
-qualityStatus;Inventory_Metadata.xml;//general:Quality_Info/text();QualityStatus
+coordinates;Inventory_Metadata.xml;geo_pnt2wkt(//*[local-name()='Geographic_Localization']/*[local-name()='List_Of_Geo_Pnt']/*[local-name()='Geo_Pnt']);Geography
+qualityStatus;Inventory_Metadata.xml;map(//general:Quality_Info,'{"100.0":"NOMINAL","default":"DEGRADED"}');String
 qualityInfo;Inventory_Metadata.xml;//general:Quality_Info/text();Double
 productType;Inventory_Metadata.xml;//general:File_Type/text();String
 instrumentShortName;Inventory_Metadata.xml;//general:Sensor_Code/text();String

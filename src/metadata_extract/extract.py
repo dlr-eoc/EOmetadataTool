@@ -155,121 +155,6 @@ class metafile_readers():
         metafile = netCDF4.Dataset(inputfile)
         return metafile
 
-class dataTypeHandlingClass():
-
-    # Check data type of target metadata entry
-    def typeHandling(self, value, dataType):
-
-        self.stringParser = dict(Int=int, Int64=int, Double=float, String=str)
-
-        logging.debug("typeHandling input dataType=%s: %s %s", dataType, value, type(value).__name__)
-
-        if dataType == 'String':
-            value = str(value)
-        elif dataType in ['Int', 'Int64', 'Double']:
-            value = self.stringParser[dataType](str(value))
-        elif dataType == 'Boolean':
-            value = str(value[0]).upper()
-        elif dataType in ['DateTime', 'DateTimeOffset']:
-            try:
-                # ensure ISO8601 UTC DateTime always has a 'Z' at the end
-                value = str(value).replace('Z', '').replace('UTC=', '').replace(',', '') + "Z"
-            except Exception as e:
-                logging.error("Failed to extract DateTime value from: %s", str(value), e)
-                value = '???'
-        elif dataType == 'Geography':
-            value = str(value)
-        elif dataType == 'WKT':
-            # split string at every second space if no comma is contained (Sentinel-3)
-            n = 2 if str(value).find(',') == -1 else 1
-            coordinates = re.findall(" ".join(["[^ ]+"] * n), str(value))
-            value = dataTypeHandlingClass.toWkt(coordinates)
-            dataType='Geography'
-        elif dataType == 'Geo_Pnt':
-            coordinates = []
-            for pnt in value:
-                lat = pnt.xpath('general:LATITUDE/text()', namespaces=ns)[0]
-                lng = pnt.xpath('general:LONGITUDE/text()', namespaces=ns)[0]
-                coordinates.append('%s,%s' % (lat, lng))
-            value = dataTypeHandlingClass.toWkt(coordinates)
-            dataType='Geography'
-        elif dataType == 'JoinString':
-            ## TODO: remove and use xpath extension (Note: fails now, due to previous get_etree_element_value)
-            value = ', '.join(value)
-            dataType = 'String'
-        elif dataType == 'tileId':
-            ## TODO: remove (use XPath substr function directly)
-            value = value[0][50:55]
-            dataType = 'String'
-        elif dataType == 'uppercase':
-            ## TODO: remove and use xpath extension
-            value = str(value[0]).upper()
-            dataType = 'String'
-        elif dataType == 'QualityStatus':
-            ## TODO: remove and use "map" xpath extension
-            value = 'NOMINAL' if value[0] == '100.0' else 'DEGRADED'
-            dataType = 'String'
-        elif dataType == 'Ascending_Flag':
-            ## TODO: remove and use "map" xpath extension
-            value = 'ASCENDING' if value[0] == 'true' else 'DESCENDING'
-            dataType = 'String'
-        elif dataType == 'AscendingFlag':
-            ## TODO: remove and use "map" xpath extension
-            value = 'ASCENDING' if value[0] == 'true' else 'DESCENDING'
-            dataType = 'String'
-        elif dataType == 'FrameSetFootprint':
-            ## TODO: dead code?
-            # split list of coordinates separated by space into latitude,longitude points (used by Sentinel-2 old metadata and Sentinel-3)
-            # -21.036 31.0044 -21.214 31.6475 -21.387 32.2859   ->     -21.036,31.0044 -21.214,31.6475 -21.387,32.2859
-            value = value[0].strip().split(' ')
-            value = [",".join(value[i:i + 2]) for i in range(0, len(value), 2)]
-            value = ' '.join(value)
-            #TODO: fix to WKT
-            dataType = 'Geography'
-        elif dataType.startswith('map('):
-            ## TODO: remove and implement xpath extension
-            lookup = dict((x.strip('" '), y.strip('" ')) 
-                for x, y in (element.split(':') 
-                for element in str(dataType[4:len(dataType)-1]).split(',')))
-            value = lookup[value] if value in lookup.keys() else lookup.default
-            dataType = 'String'
-        elif dataType == 'List':
-            ## TODO: check if used (Note: fails now, due to previous get_etree_element_value) 
-            value = json.loads(value)
-        else:
-            logging.warning("keeping unknown dataType=%s: %s %s", dataType, str(value), type(value).__name__)
-
-        logging.debug("typeHandling output dataType=%s: %s %s", dataType, str(value), type(value).__name__)
-
-        return (value, dataType)
-
-    # Convert lat,lon coordinate list into WKT (lon lat) list.
-    # Returns a WKT POINT, LINESTRING or POLYGON.
-    def toWkt(coordinates):
-        logging.debug("toWkt - coordinates %s", coordinates)
-        count = len(coordinates)
-        # reverse "lat,lon" into "lon lat" (Sentinel-1 and -2)
-        coordinateString = sep = ''
-        for point in coordinates:
-            lat,lon = re.split('[, ]', point)
-            coordinateString += sep + lon + ' ' + lat
-            sep = ', '
-        # convert to POINT, LINESTRING or POLYGON
-        if count == 1:
-            wkt = 'POINT(' + coordinateString + ')'
-        elif count == 2:
-            wkt = 'LINESTRING(' + coordinateString + ')'
-        else:
-            if coordinates[0] != coordinates[count - 1]:
-                # close polygon
-                latlon = coordinates[0].split(',')
-                coordinateString += ', ' + latlon[1] + ' ' + latlon[0]
-            if count < 3:
-                raise Exception('insufficient coordinate points ' + ' '.join(coordinates))
-            wkt = 'POLYGON((' + coordinateString + '))'
-        return wkt
-
-
 # This function can be replaced during the extract() call
 def dictFiller(data, name, type, value):
     #data[name] = {"Name": name, "Value": value, "Type": type}
@@ -291,6 +176,7 @@ def extract(scene, csv_file, dict_filler = dictFiller):
 
     # Instantiate "readers" class
     readers = metafile_readers()
+    logging.debug("readers: %s", type(readers))
 
     logging.debug("current workdir %s %s", os.getcwd(), csv_file)
 
@@ -312,10 +198,21 @@ def extract(scene, csv_file, dict_filler = dictFiller):
     dict_filler(mapped_metadata, 'filename', 'String', filename)
     dict_filler(mapped_metadata, 'identifier', 'String', identifier)
 
-    dataTypeHandling = dataTypeHandlingClass()
-    logging.debug("dataTypeHandling: %s", type(dataTypeHandling))
-    logging.debug("readers: %s", type(readers))
-    # sys.exit()
+    # data type specific parsers
+    dataTypeStringParser = dict(Int=int, Int64=int, Double=float, String=str)
+
+    # register extension functions for lxml.etree
+    ns = etree.FunctionNamespace(None)
+    ns['regex-capture'] = regex_capture
+    ns['uppercase'] = uppercase
+    ns['lowercase'] = lowercase
+    ns['quote'] = quote
+    ns['join'] = join_function
+    ns['map'] = map_function
+    ns['date_format'] = date_format
+    ns['geo_pnt2wkt'] = geo_pnt2wkt
+    ns['from_json'] = from_json_function
+    ns['WKT'] = toWkt
 
     for metafile, queries in metadata_mapping.items():
         logging.debug("metafile: %s", metafile)
@@ -344,19 +241,11 @@ def extract(scene, csv_file, dict_filler = dictFiller):
                 metadata_source = readers.read_from_jp2(scene, metafile)
             elif scene_type == '.json':
                 metadata_source = readers.read_file(scene, metafile)
+            elif os.path.isfile(scene):
+                metadata_source = readers.read_from_folder(scene, metafile)
             else:
                 logging.debug("")
                 raise TypeError("Unknown scene %s of type %s", scene, scene_type)
-
-            # register extension functions for lxml.etree
-            ns = etree.FunctionNamespace(None)
-            ns['regex-capture'] = regex_capture
-            ns['uppercase'] = uppercase
-            ns['lowercase'] = lowercase
-            ns['quote'] = quote
-            ns['join'] = join_function
-            ns['map'] = map_function
-            ns['date_format'] = date_format
 
             # parse into XML etree
             logging.debug("Input from: %s type: %s", metadata_source, type(metadata_source))
@@ -426,11 +315,32 @@ def extract(scene, csv_file, dict_filler = dictFiller):
             if not isinstance(value, float) and isinstance(value, list) and len(value) == 0 or value == None:
                 continue
 
-            # data type specific conversions
-            (value, dataTypeUpdated) = dataTypeHandling.typeHandling(value, dataType)
+            logging.debug("typeHandling input dataType=%s: %s %s", dataType, value, type(value).__name__)
+
+            if dataType == 'String':
+                value = str(value)
+            elif dataType in ['Int', 'Int64', 'Double']:
+                value = dataTypeStringParser[dataType](str(value))
+            elif dataType == 'Boolean':
+                value = str(value[0]).upper()
+            elif dataType in ['DateTime', 'DateTimeOffset']:
+                try:
+                    # ensure ISO8601 UTC DateTime always has a 'Z' at the end
+                    value = str(value).replace('Z', '').replace('UTC=', '').replace(',', '') + "Z"
+                except Exception as e:
+                    logging.error("Failed to extract DateTime value from: %s", str(value), e)
+                    value = '???'
+            elif dataType == 'Geography':
+                value = str(value)
+            else:
+                logging.warning("keeping unknown dataType=%s: %s %s", dataType, str(value), type(value).__name__)
+
+            logging.debug("typeHandling output dataType=%s: %s %s", dataType, str(value), type(value).__name__)
 
             # Now write all information to the "data"-dictionary.
-            dict_filler(mapped_metadata, name, dataTypeUpdated, value)
+            dict_filler(mapped_metadata, name, dataType, value)
+
+        # mappings per metadata file
 
     return mapped_metadata
 
@@ -461,16 +371,24 @@ def save(data, outputfile):
 def uppercase(context, a):
     value = get_etree_element_value(a)
     logging.debug("uppercase for: %s", value)
-    value = [value.upper()]
-    logging.debug("uppercase produced: %s", value)
+    try:
+      value = value.upper()
+      logging.debug("uppercase produced: %s", value)
+    except:
+        #logging.warning("uppercase ignoring value: %s", value)
+        return None
     return value
 
 @ns
 def lowercase(context, a):
     value = get_etree_element_value(a)
     logging.debug("lowercase for: %s", value)
-    value = value.lower()
-    logging.debug("lowercase produced: %s", value)
+    try:
+        value = value.lower()
+        logging.debug("lowercase produced: %s", value)
+    except:
+        #logging.warning("lowercase ignoring value: %s", value)
+        return None
     return value
 
 @ns
@@ -488,7 +406,60 @@ def regex_capture(context, a, regex_str):
 @ns
 def join_function(context, a, join_separator=', '):
     value = get_etree_element_value(a)
-    return join_separator.join(value)
+    try:
+        return join_separator.join(value)
+    except:
+        #logging.warning("join_function ignoring value: %s", value)
+        return value
+
+@ns
+def toWkt(context, a):
+    # Convert lat,lon coordinate list into WKT (lon lat) list.
+    # Returns a WKT POINT, LINESTRING or POLYGON.
+
+    value = get_etree_element_value(a)
+
+    logging.debug("toWkt - coordinates %s", value)
+
+    # split string at every second space if no comma is contained (Sentinel-3)
+    n = 2 if value.find(',') == -1 else 1
+    coordinates = re.findall(" ".join(["[^ ]+"] * n), value)
+
+    count = len(coordinates)
+    # reverse "lat,lon" into "lon lat" (Sentinel-1 and -2)
+    coordinateString = sep = ''
+    for point in coordinates:
+        lat,lon = re.split('[, ]', point)
+        coordinateString += sep + lon + ' ' + lat
+        sep = ', '
+    # convert to POINT, LINESTRING or POLYGON
+    if count == 1:
+        wkt = 'POINT(' + coordinateString + ')'
+    elif count == 2:
+        wkt = 'LINESTRING(' + coordinateString + ')'
+    else:
+        if coordinates[0] != coordinates[count - 1]:
+            # close polygon
+            latlon = coordinates[0].split(',')
+            coordinateString += ', ' + latlon[1] + ' ' + latlon[0]
+        if count < 3:
+            raise Exception('insufficient coordinate points ' + ' '.join(coordinates))
+        wkt = 'POLYGON((' + coordinateString + '))'
+    return wkt
+
+@ns
+def geo_pnt2wkt(context, a):
+    if isinstance(a, list):
+        coordinates = []
+        for pnt in a:
+            lat = pnt.xpath("*[local-name()='LATITUDE']")[0].text
+            lng = pnt.xpath("*[local-name()='LONGITUDE']")[0].text
+            coordinates.append('%s,%s' % (lat, lng))
+        value = toWkt(context, coordinates)
+    else:
+        logging.warning("skipping Geo_Pnt extraction for %s (%s)", a, type(a).__name__)
+        return None
+    return value
 
 @ns
 def map_function(context, a, map_string):
@@ -506,6 +477,13 @@ def map_function(context, a, map_string):
     value = lookup[value] if value in lookup.keys() else lookup['default']
     logging.debug("map_function decoded input: %s", value)
     return value
+
+@ns
+def from_json_function(context, a):
+    value = json.loads(get_etree_element_value(a))
+    logging.debug("from_json_function for: %s", value)
+    return value
+
 
 timedelta_regex = re.compile(r'^((?P<days>[\.\d]+?)d)?((?P<hours>[\.\d]+?)h)?((?P<minutes>[\.\d]+?)m)?((?P<seconds>[\.\d]+?)s)?$')
 def parse_timedelta(time_str):

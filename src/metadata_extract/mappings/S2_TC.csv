@@ -4,8 +4,8 @@ processingDate;xml:BOX_0;//*[local-name()='Generation_Time']/text();DateTimeOffs
 beginningDateTime;xml:BOX_0;//*[local-name()='Validity_Start']/text();DateTimeOffset
 endingDateTime;xml:BOX_0;//*[local-name()='Validity_Stop']/text();DateTimeOffset
 orbitNumber;xml:BOX_0;//*[local-name()='Start_Orbit_Number']/text();Int64
-coordinates;xml:BOX_0;//*[local-name()='Geographic_Localization']/*[local-name()='List_Of_Geo_Pnt']/*[local-name()='Geo_Pnt'];Geo_Pnt
-qualityStatus;xml:BOX_0;//*[local-name()='Quality_Info']/text();QualityStatus
+coordinates;xml:BOX_0;geo_pnt2wkt(//*[local-name()='Geographic_Localization']/*[local-name()='List_Of_Geo_Pnt']/*[local-name()='Geo_Pnt']);Geography
+qualityStatus;xml:BOX_0;map(//*[local-name()='Quality_Info'],'{"100.0":"NOMINAL","default":"DEGRADED"}');String
 qualityInfo;xml:BOX_0;//*[local-name()='Quality_Info']/text();Double
 productType;xml:BOX_0;//*[local-name()='File_Type']/text();String
 instrumentShortName;xml:BOX_0;//*[local-name()='Sensor_Code']/text();String
