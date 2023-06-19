@@ -28,7 +28,7 @@ sat:orbit_state;static;;String;DESCENDING
 sat:absolute_orbit;**/SENTINEL2*_MTD_ALL.xml;/Muscate_Metadata_Document/Product_Characteristics/ORBIT_NUMBER/text();Int64;5839
 sat:relative_orbit;static;;Int64;38
 sat:anx_datetime;static;;DateTimeOffset;2014-09-30T14:24:08.005875Z
-sat:tileId;**/SENTINEL2*_MTD_ALL.xml;/Muscate_Metadata_Document/Dataset_Identification/GEOGRAPHICAL_ZONE/text();;T33UVQ
+sat:tileId;**/SENTINEL2*_MTD_ALL.xml;substring(/Muscate_Metadata_Document/Dataset_Identification/GEOGRAPHICAL_ZONE,50,6);String;T33UVQ
 processing:lineage;**/SENTINEL2*_MTD_ALL.xml;/Muscate_Metadata_Document/Production_Informations/Processing_Jobs_List/Job/PRODUCER_NAME/text();String;MUSCATE
 processing:level;**/SENTINEL2*_MTD_ALL.xml;/Muscate_Metadata_Document/Product_Characteristics/PRODUCT_LEVEL/text();String;L2A
 processing:facility;**/SENTINEL2*_MTD_ALL.xml;/Muscate_Metadata_Document/Dataset_Identification/AUTHORITY/text();String;THEIA
