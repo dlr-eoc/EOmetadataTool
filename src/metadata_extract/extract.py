@@ -333,6 +333,8 @@ def extract(scene, csv_file, dict_filler = dictFiller):
                 value = str(value)
             elif dataType in ['Int', 'Int64', 'Double']:
                 value = dataTypeStringParser[dataType](str(value))
+                if math.isnan(value):
+                    value = None
             elif dataType == 'Boolean':
                 value = str(value[0]).upper()
             elif dataType in ['DateTime', 'DateTimeOffset']:
