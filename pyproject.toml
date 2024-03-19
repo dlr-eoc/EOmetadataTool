@@ -1,3 +1,47 @@
+[project]
+name = "metadata-extract"
+version = "0.3.6"
+description = "A script to extract metadata from EO products"
+authors = [
+    {name = "Christoph Reck", email="christoph.reck@dlr.de"},
+    {name = "Jonas Eberle", email="jonas.eberle@dlr.de"},
+    {name = "Felix Feckler", email="felix.feckler@dlr.de"},
+    {name = "Julian Meyer-Arnek", email="julian.meyer-arnek@dlr.de"}
+]
+license = {file = "LICENSE.md"}
+readme = "README.md"
+requires-python = ">=3.6"
+keywords = [
+    "metadata",
+    "extraction",
+    "opensearch eo",
+    "stac",
+    "sentinel"
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent"
+]
+dependencies = [
+    "lxml",
+    "cssselect",
+    "jinja2",
+    "gdal",
+    "netCDF4",
+    "dicttoxml",
+    "pathlib3x"
+]
+
+[project.urls]
+homepage = "https://gitlab.dlr.de/clas/SentinelMetadataExtract"
+documentation = "https://gitlab.dlr.de/clas/SentinelMetadataExtract"
+repository = "https://gitlab.dlr.de/clas/SentinelMetadataExtract"
+issues = "https://gitlab.dlr.de/clas/SentinelMetadataExtract/issues"
+
+[project.scripts]
+oseostac = "oseostac.cli:start"
+
 [build-system]
 requires = [
     "setuptools>=42",
