@@ -7,6 +7,7 @@ import argparse
 import logging
 import pprint
 import glob
+import math
 import sys
 import fnmatch
 import tarfile
@@ -154,7 +155,7 @@ class metafile_readers():
         return BytesIO(bytes(metafile, encoding='ISO-8859-1'))
 
     def read_from_netcdf(self, inputfile, metafile):
-        if not netCDF4.Dataset:
+        if not netCDF4:
             logging.error("NetCDF library unavailable, extraction failed")
             return None
         if os.path.isdir(inputfile):
@@ -261,7 +262,7 @@ def extract(scene, csv_file, dict_filler = dictFiller):
 
             # parse into XML etree
             logging.debug("Input from: %s type: %s", metadata_source, type(metadata_source))
-            if isinstance(metadata_source, netCDF4.Dataset):
+            if netCDF4 and isinstance(metadata_source, netCDF4.Dataset):
                 xmlstring = dicttoxml(metadata_source.__dict__)
                 tree_root = etree.fromstring(xmlstring)
                 tree = etree.ElementTree(tree_root)                    
