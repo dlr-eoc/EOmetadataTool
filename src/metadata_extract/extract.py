@@ -130,7 +130,8 @@ class metafile_readers():
             if os.path.isdir(scenefolder):
                 metafiles = glob.glob(os.path.join(scenefolder, metafile), recursive=True)
                 if len(metafiles) == 0:
-                    raise Exception("Metafile %s could not be found" % metafile)
+                    logging.warn("Metafile %s could not be found" % metafile)
+                    return None
                 else:
                     metafile = metafiles[0]
                     logging.debug("metadata file found in DIR: %s", metafile)
@@ -253,6 +254,10 @@ def extract(scene, csv_file, dict_filler = dictFiller):
             else:
                 logging.debug("")
                 raise TypeError("Unknown scene %s of type %s", scene, scene_type)
+
+            ## TODO: improve handling, can occur for missing NetCDF library or when metadata file is not found
+            if metadata_source is None:
+                continue
 
             # parse into XML etree
             logging.debug("Input from: %s type: %s", metadata_source, type(metadata_source))
