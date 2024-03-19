@@ -20,7 +20,11 @@ from osgeo import gdal
 from pathlib import Path
 from io import BytesIO
 
-import netCDF4
+try:
+  import netCDF4
+except ImportError:
+  netCDF4 = None
+
 from dicttoxml import dicttoxml
 
 if sys.version_info < (3, 7):
@@ -149,6 +153,9 @@ class metafile_readers():
         return BytesIO(bytes(metafile, encoding='ISO-8859-1'))
 
     def read_from_netcdf(self, inputfile, metafile):
+        if not netCDF4.Dataset:
+            logging.error("NetCDF library unavailable, extraction failed")
+            return None
         if os.path.isdir(inputfile):
             inputfile = glob.glob(os.path.join(inputfile, metafile))[0]
         logging.debug("metadata file found in NetCDF: %s", inputfile)
