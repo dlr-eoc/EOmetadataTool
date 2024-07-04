@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="ISO-8859-1" ?>
 <IIF>
+{%- set creator = plProcessingSystemID if plProcessingSystemID is not none else 'lid://ProcessingSystem////S3/metadata_extract_gen_iif/1.0' %}
 {%- set a = attributes -%}
 {%- set collection = a.Collection.Value -%}
 {%- macro FEATURE(key, attribute='', indent='') -%}
@@ -111,12 +112,7 @@
       <stopTime>{{ a.endingDateTime.Value if a.endingDateTime else a.beginningDateTime.Value }}</stopTime>
     </temporalCoverage>
     <creation>
-{#-
-      <!-- IF USING IIF FOR INSERTING PRODUCT INTO PL -->
-      <!-- PLEASE ENSURE THAT CREATOR IS NOT EXISTING -->
-      <!-- OTHERWISE INSERT A VALID VALUE             -->
-      <!-- <creator>$((lid://*PLEASE INSERT A VALID VALUE*))</creator>-->
-#}
+      <creator>$(({{ creator }}))</creator>
       <time>{{ a.publicationDate.Value.replace('Z', '') }}</time>
       <site>OP</site>
     </creation>
@@ -170,11 +166,13 @@
     {{ FEATURE('totalSize', 'contentLength') }}
     {{ FEATURE('uid', 'uuid') }}
     {{ FEATURE('versionTime', 'processingDate') }} 
+    {%- for checksum in properties['checksums'] %}
     <feature key="checksum">
-      <feature key="algorithm">{{ a.checksums[0].Algorithm if a["checksums"] }}</feature>
-      <feature key="value">{{ a.checksums[0].Value if a["checksums"] }}</feature>
-      <feature key="date">{{ a.checksums[0].ChecksumDate if a["checksums"] }}</feature>
+      <feature key="algorithm">{{ checksum.Algorithm | default('MD5') }}</feature>
+      <feature key="value">{{ checksum.Value }}</feature>
+      <feature key="date">{{ checksum.ChecksumDate | default(date) }}</feature>
     </feature>
+    {%- endfor %}
   </specificParameters>
 {#
  </item>

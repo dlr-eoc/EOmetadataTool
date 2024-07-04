@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="ISO-8859-1" ?>
 <IIF>
+{%- set creator = plProcessingSystemID if plProcessingSystemID is not none else 'lid://ProcessingSystem////S1/metadata_extract_gen_iif/1.0' %}
 {%- set a = attributes -%}
 {%- set productType = a.filename.Value[7:10] %}
 {%- set collection = a.Collection.Value ~ '.' ~ productType -%}
@@ -112,12 +113,7 @@
       <stopTime>{{ a.endingDateTime.Value if a.endingDateTime else a.beginningDateTime.Value }}</stopTime>
     </temporalCoverage>
     <creation>
-{#-
-      <!-- IF USING IIF FOR INSERTING PRODUCT INTO PL -->
-      <!-- PLEASE ENSURE THAT CREATOR IS NOT EXISTING -->
-      <!-- OTHERWISE INSERT A VALID VALUE             -->
-      <!-- <creator>$((lid://*PLEASE INSERT A VALID VALUE*))</creator>-->
-#}
+      <creator>$(({{ creator }}))</creator>
       <time>{{ a.publicationDate.Value.replace('Z', '') }}</time>
       <site>OP</site>
     </creation>
@@ -148,7 +144,7 @@
     {# FEATURE('platformIdentifier') -#}
     {# FEATURE('platformSerialIdentifier') -#}
     {# FEATURE('platformShortName') -#}
-    <feature key="polarisationChannels">{{ a.polarisationChannels.Value.replace(' ','') }}</feature>
+    <feature key="polarisationChannels">{{ a.polarisationChannels.Value }}</feature>
     <feature key="polarization">{{ a.filename.Value[14:16] }}</feature>
     <feature key="processingCenter">{{ a.processingCenter.Value[0:20] }}</feature>
     {# FEATURE('processingDate') -#}
@@ -180,11 +176,13 @@
     {{ FEATURE('totalSlices') }}
     {{ FEATURE('uid', 'uuid') }}
     {{ FEATURE('versionTime', 'processingDate') }} 
+    {%- for checksum in properties['checksums'] %}
     <feature key="checksum">
-      <feature key="algorithm">{{ a.checksums[0].Algorithm if a["checksums"] }}</feature>
-      <feature key="value">{{ a.checksums[0].Value if a["checksums"] }}</feature>
-      <feature key="date">{{ a.checksums[0].ChecksumDate if a["checksums"] }}</feature>
+      <feature key="algorithm">{{ checksum.Algorithm | default('MD5') }}</feature>
+      <feature key="value">{{ checksum.Value }}</feature>
+      <feature key="date">{{ checksum.ChecksumDate | default(date) }}</feature>
     </feature>
+    {%- endfor %}
   </specificParameters>
 {#
  </item>

@@ -4,10 +4,11 @@
 {#-   date        with the current ISO date string #}
 {#-   properties  with EOP naming convention #}
 {#-     ... and optional vendorSpecific ones [] #}
-{#-   product[filename,size,*host,*path,*account,checksum,checksumType,*checksumDate] #}
-{#-   *quicklook[filename,size,*host,*path,*account,checksum,checksumType,*checksumDate] #}
+{#-   product[filename,size,*host,*path,*account] #}
+{#-   *checksum[Algorithm,Value,ChecksumDate] #}
+{#-   *quicklook[filename,size,*host,*path,*account] #}
 {#-   coordinates in WKT POLYGON format #}
-{#-   plProcessingSystemID e.g. "lid://ProcessingSystem////S2/psm-sentinel2-ingestion/1.0" #}
+{#-   plProcessingSystemID e.g. "lid://ProcessingSystem////S2/metadata_extract_gen_iif/1.0" #}
 {#- #}
 {%- set identifier = properties['identifier'].Value %}
 {%- set mission = identifier[:2] %}
@@ -27,15 +28,18 @@
 {%- set uuid = ENV.get('uuid') %}
 {%- set md5hash = ENV.get('md5hash') %}
 {#- #}
+{%- set creator = plProcessingSystemID if plProcessingSystemID is not none else 'lid://ProcessingSystem////S2/metadata_extract_gen_iif/1.0' %}
+{#- #}
 {%- macro FEATURE(key, attribute='', indent='', defaultValue=None) -%}
   {%- if not attribute -%}{% set attribute=key %}{% endif -%}
   {%- if properties[attribute] -%}
-    {%- if defaultValue -%}
-{{ indent }}<feature key="{{ key }}">{{ properties[attribute].Value | default(defaultValue) }}</feature>{% else -%}
 {{ indent }}<feature key="{{ key }}">{{ properties[attribute].Value }}</feature>
-    {%- endif -%}
   {%- else -%}
-{{ indent }}<!-- {% if key == attribute %}{{ key }}{% else %}{{ key }}={{ attribute }}{% endif %} -->
+    {%- if defaultValue is not none -%}
+{{ indent }}<feature key="{{ key }}">{{ defaultValue }}</feature>
+    {%- else -%}
+{{ indent }}<!-- test {% if key == attribute %}{{ key }}{% else %}{{ key }}={{ attribute }}{% endif %} -->
+    {%- endif -%}
   {%- endif -%}
 {%- endmacro %}
 {#- #}
@@ -120,8 +124,8 @@
       <stopTime>{{ endPosition }}</stopTime>
     </temporalCoverage>
     <creation>
-      <creator>$(({{ plProcessingSystemID | default('lid://ProcessingSystem////S2/psm-sentinel2-ingestion/1.0') }}))</creator>
-      <time>{{ date }}</time>
+      <creator>$(({{ creator }}))</creator>
+      <time>{{ properties['originDate'].Value | default(date) }}</time>
       <site>EOC</site>
     </creation>
     <predecessor />
@@ -131,7 +135,7 @@
     {{ FEATURE('uid','uuid') }}
     <feature key="beginPosition">{{ beginPosition }}</feature>
     <feature key="endPosition">{{ endPosition }}</feature>
-    <feature key="timePosition">{{ properties['eop:timePosition'] | default(properties['eop:processingDate'].Value) }}</feature>
+    {{ FEATURE('timePosition','eop:timePosition', defaultValue=properties['eop:processingDate'].Value) }}
     <feature key="platform">
       {{ FEATURE('shortName','eop:platformShortName') }}
       {{ FEATURE('serialIdentifier','eop:platformSerialIdentifier') }}
@@ -144,11 +148,11 @@
     </feature>
     <feature key="sensor">
       {{ FEATURE('sensorType','eop:sensorType') }}
-      {{ FEATURE('operationalMode','eop:sensorOperationalMode') }}
+      {{ FEATURE('operationalMode','eop:operationalMode') }}
       {{ FEATURE('resolution','eop:sensorResolution') }}
       {{ FEATURE('swathIdentifier','eop:swathIdentifier') }}
     </feature>
-    {{ FEATURE('relativeOrbitNumber','eop:relativeOrbitNumber') }}
+    {#- {{ FEATURE('relativeOrbitNumber','eop:relativeOrbitNumber') }} #}
     {{ FEATURE('orbitNumber','eop:orbitNumber') }}
     {{ FEATURE('lastOrbitNumber','eop:lastOrbitNumber') }}
     {{ FEATURE('orbitDirection','eop:orbitDirection') }}
@@ -182,8 +186,8 @@
     </feature>
     <feature key="archivedIn">
       <feature key="archivingCenter">EOC</feature>
-      <feature key="archivingDate">#((rid://{{ collection }},insertionTime))</feature>
-      <feature key="archivingIdentifier">#((rid://{{ collection }},id))</feature>
+      {#- <feature key="archivingDate">#((rid://{{ collection }},insertionTime))</feature> #}
+      {#- <feature key="archivingIdentifier">#((rid://{{ collection }},id))</feature> #}
       {#- FEATURE('archivingCenter','eop:archivingCenter') #}
       {#- FEATURE('archivingDate','eop:archivingDate') #}
       {#- FEATURE('archivingIdentifier','eop:archivingIdentifier') #}
@@ -206,7 +210,6 @@
     </feature>
     <feature key="creationDate">{{ date }}</feature>
     {{ VENDOR_SPECIFIC('PRODUCT_URI','s2msi:productUri') }}
-    {{ VENDOR_SPECIFIC('DATATAKE_TYPE','s2msi:dataTakeType') }}
     {{ VENDOR_SPECIFIC('Reflectance_Conversion','s2msi:reflectanceConversion') }}
     {{ VENDOR_SPECIFIC('PRODUCTION_DEM_TYPE','s2msi:productionDEMtype') }}
     {{ VENDOR_SPECIFIC('DEGRADED_ANC_DATA_PERCENTAGE','s2msi:degradedANCdataPercentage') }}
@@ -245,6 +248,8 @@
           <path>{{ product.path | default('.') }}</path>
           <name>{{ product.filename }}</name>
           <account>{{ product.account | default('.') }}</account>
+          <checksumAlgorithm>{{ properties.checksums[0].Algorithm if properties["checksums"] }}</checksumAlgorithm>
+          <checksumValue>{{ properties.checksums[0].Value if properties["checksums"] }}</checksumValue>
         </location>
         <size>
           <value>{{ product.size }}</value>
