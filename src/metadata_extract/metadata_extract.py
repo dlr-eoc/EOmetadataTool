@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 import argparse
 import hashlib
+import logging
 import os
 import pprint
 import sys
@@ -44,12 +45,19 @@ def dictFiller(data, name, type, value):
     return
     
 if __name__ == "__main__":
+    logging.disabled = True
     # define command line argument
     parser = argparse.ArgumentParser(description='jinja templated metadata extractor')
     parser.add_argument("--scene", type=str, help="Path to product file (zipped file or folder)", required=True)
     parser.add_argument("--mapping", type=str, help="Mapping CSV file with attributes to ", required=False)
     parser.add_argument("--template", type=str, help="jinja template", required=False)
+    parser.add_argument('-d', '--debug', help="debugging logs", action="store_const", dest="loglevel", const=logging.DEBUG, 
+        default=logging.WARNING)
+    parser.add_argument('-v', '--verbose', help="verbose logs", action="store_const", dest="loglevel", const=logging.INFO)
     args = parser.parse_args()
+
+    # configure logging
+    logging.basicConfig(level=args.loglevel, format='%(asctime)s %(levelname)s %(message)s')
 
     context = {}
     context['filename'] = args.scene
@@ -74,10 +82,10 @@ if __name__ == "__main__":
     extracted_metadata = extract(args.scene, mappings_file, dictFiller)
 
     # add some standard metadata ## TODO: needs to be moved into mappings file
-    if productType:
+    try:
         dictFiller(extracted_metadata, 'ProductType', 'String', productType)
-    if collectionName:
         dictFiller(extracted_metadata, 'Collection', 'String', collectionName)
+    except: pass
     dictFiller(extracted_metadata, 'contentLength', 'Int64', filesize(args.scene))
     dictFiller(extracted_metadata, 'publicationDate', 'DateTimeOffset', context['now'])
 
