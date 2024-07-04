@@ -420,12 +420,12 @@ def regex_capture(context, a, regex_str):
 
 @ns
 def join_function(context, a, join_separator=', '):
-    value = get_etree_element_value(a)
+    logging.debug("join_function for: %s", join_separator.join(a))
     try:
-        return join_separator.join(value)
+        return join_separator.join(a)
     except:
-        #logging.warning("join_function ignoring value: %s", value)
-        return value
+        logging.warning("join_function ignoring value: %s", a)
+        return a
 
 @ns
 def toWkt(context, a):
@@ -533,6 +533,7 @@ if __name__ == "__main__":
     parser.add_argument("--scene", type=str, help="Path to Sentinel scene (zipped file or folder) or filename of the NetCDF input file", required=True)
     parser.add_argument("--mapping", type=str, help="Mapping CSV file with attributes to ", required=True)
     parser.add_argument("--template", type=str, help="jinja template", required=False)
+    parser.add_argument("--set", metavar="KEY=VALUE", nargs='+', help="enter key=value pairs to place in dict", required=False)
     parser.add_argument('-d', '--debug', help="debugging logs", action="store_const", dest="loglevel", const=logging.DEBUG, 
         default=logging.WARNING)
     parser.add_argument('-v', '--verbose', help="verbose logs", action="store_const", dest="loglevel", const=logging.INFO)
@@ -546,6 +547,21 @@ if __name__ == "__main__":
 
     # perform metadata extraction
     extracted_metadata = extract(args.scene, mappings_file, dictFiller)
+
+    # add parameters from comandline
+    if args.set:
+        for item in args.set:
+            if "=" in item:
+                key, value = item.split('=')
+                dictFiller(extracted_metadata, key, "String", value)
     
-    pprint.pprint(extracted_metadata, width=120)
-    #print(json.dumps(extracted_metadata, indent=2))
+    if args.template:
+        from jinja2 import Environment, FileSystemLoader
+        file_loader = FileSystemLoader('.')
+        env = Environment(loader=file_loader)
+        template = env.get_template(args.template)
+        output = template.render(properties=extracted_metadata,ENV=os.environ)
+        print(output)
+    else:
+        pprint.pprint(extracted_metadata, width=120)
+        #print(json.dumps(extracted_metadata, indent=2))
