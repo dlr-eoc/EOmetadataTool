@@ -3,6 +3,7 @@ gml:beginPosition;MTD_MSIL[12][ABC].xml;//PRODUCT_START_TIME/text();DateTimeOffs
 gml:endPosition;MTD_MSIL[12][ABC].xml;//PRODUCT_STOP_TIME/text();DateTimeOffset
 gml:timePosition;MTD_MSIL[12][ABC].xml;//GENERATION_TIME/text();DateTimeOffset
 eop:platformShortName;MTD_MSIL[12][ABC].xml;substring(//SPACECRAFT_NAME/text(),1,10);String
+eop:operationalMode;MTD_MSIL[12][ABC].xml;//Datatake/DATATAKE_TYPE;String
 eop:platformSerialIdentifier;MTD_MSIL[12][ABC].xml;substring(//PRODUCT_URI/text(),3,1);String
 eop:instrumentShortName;MTD_MSIL[12][ABC].xml;substring(//PRODUCT_TYPE/text(), 3, 3);String
 eop:orbitNumber;manifest.safe;//safe:orbitNumber[@type="start"]/text();Int64
