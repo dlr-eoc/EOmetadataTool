@@ -142,7 +142,13 @@ class metafile_readers():
             else:
                 raise Exception("Metafile " + metafile + " does not match filename " + scenefolder)
         else:
-            metafile = os.path.join(scenefolder, metafile)
+            metafiles = glob.glob(os.path.join(scenefolder, metafile), recursive=True)
+            if len(metafiles) == 0:
+                logging.warn("Metafile %s could not be found" % metafile)
+                return None
+            else:
+                metafile = metafiles[0]
+                logging.debug("metadata file found in DIR: %s", metafile)
         metafile = open(metafile, 'r')
         return metafile
 
