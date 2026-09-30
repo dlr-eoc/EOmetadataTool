@@ -266,7 +266,21 @@ def extract(scene, csv_file, dict_filler = dictFiller):
             if netCDF4 and isinstance(metadata_source, netCDF4.Dataset):
                 xmlstring = dicttoxml(metadata_source.__dict__)
                 tree_root = etree.fromstring(xmlstring)
-                tree = etree.ElementTree(tree_root)                    
+                tree = etree.ElementTree(tree_root)
+
+                if log.level == logging.DEBUG:
+                    # Print help for writing mappings.csv files
+                    etree.indent(tree.getroot(), space="  ")
+                    pretty_xml = etree.tostring(tree.getroot(), encoding='unicode', pretty_print=True)
+                    log.debug("generated XML:")
+                    log.debug(pretty_xml[:10000] + "..." if len(pretty_xml) > 10000 else pretty_xml)
+
+                    log.debug("\n=== all XPath expressions for NetCDF ===")
+                    for i, element in enumerate(tree.iter()):
+                        xpath = tree.getpath(element)
+                        text_info = f" -> '{element.text.strip()}'" if element.text and element.text.strip() else ""
+                        log.debug(f"{i + 1:2d}. {xpath}{text_info}")
+
             elif metadata_type == '.json':
                 json_data = json.load(metadata_source)
                 xmlstring = dicttoxml(json_data)
