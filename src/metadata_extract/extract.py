@@ -179,8 +179,8 @@ def dictFiller(data, name, type, value):
 # csv_file: Mapping file / CSV-file which contains information on how to map metadata tags from "scene"
 #
 def extract(scene, csv_file, dict_filler = dictFiller):
-    log.debug("Scene: %s", scene)
-    log.debug("Mapping file: %s", csv_file)
+    log.info("Scene: %s", scene)
+    log.info("Mapping file: %s", csv_file)
 
     # Check input file or folder
     if not os.path.exists(scene):
@@ -188,12 +188,10 @@ def extract(scene, csv_file, dict_filler = dictFiller):
 
     # Instantiate "readers" class
     readers = metafile_readers()
-    log.debug("readers: %s", type(readers))
 
     log.debug("current workdir %s %s", os.getcwd(), csv_file)
 
     # Load metadata mapping.
-    log.debug("Looking for CSV: %s", csv_file)
     metadata_mapping = load_mappings(csv_file)
 
     # raise Exception("ERROR: mapping file missing " + csv_file)
@@ -315,7 +313,6 @@ def extract(scene, csv_file, dict_filler = dictFiller):
             else:
                 # Check for value.
                 try:
-                    ##print("xpath:", xpath)
                     value_tmp = tree.xpath(xpath, namespaces=ns)
                     ##print("xpath returned:", value_tmp, len(value_tmp), type(value_tmp).__name__)
                     log.debug("xpath returned: %s (%s)", value_tmp, type(value_tmp).__name__)
@@ -548,7 +545,6 @@ if __name__ == "__main__":
     log_handler.setFormatter(log_format)
     log_handler.setLevel(args.loglevel)
     log.addHandler(log_handler)
-
 
     # allow mapping to be specified relative to CWD or within <__file__>/mapping/
     mappings_file = args.mapping if Path(args.mapping).exists() else str(Path(__file__).parent) + "/mappings/" + args.mapping
