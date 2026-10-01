@@ -43,11 +43,67 @@ from clas.getProductType import product_type
 from clas.getCollection import collection
 from clas.getRule import mapping_rule 
 
-# Reads and parses mappings file (csv).
-# Returns dictionary with metadata tag mappings (source tag name -> target tag name).
 
 log = logging.getLogger("metadata_extract")
 log.setLevel(logging.DEBUG)
+
+
+def build_xml_from_netcdf(dataset: netCDF4.Dataset) -> etree.ElementTree:
+    """Extracts metadata attributes from NetCDF regardless of structure.
+
+    Args:
+        dataset: A netCDF4.Dataset containing the metadata attributes.
+
+    Returns:
+        An XML tree containing the extracted metadata from the NetCDF file.
+    """
+    metadata = {}
+
+    # 1. Global Attributes (works for Sentinel-5P)
+    if dataset.ncattrs():
+        for attr in dataset.ncattrs():
+            try:
+                metadata[attr] = getattr(dataset, attr)
+            except Exception as e:
+                log.error(f"Unable to retrieve attribute {attr} due to error {e}")
+                metadata[attr] = ""
+
+    # 2. Global Attributes (works for MetOp)
+    if dataset.groups:
+
+        # Recursively through all metadata groups
+        def extract_group_metadata(group):
+            group_data = {}
+
+            # Group Attribute
+            if group.ncattrs():
+                for attr in group.ncattrs():
+                    try:
+                        group_data[attr] = getattr(group, attr)
+                    except Exception as e:
+                        log.error(f"Unable to retrieve attribute {attr} due to error {e}")
+                        group_data[attr] = ""
+
+            # subgroups
+            if group.groups:
+                for subgroup_name, subgroup in group.groups.items():
+                    if extracted_subgroup_metadata := extract_group_metadata(subgroup):
+                        group_data[subgroup_name] = extracted_subgroup_metadata
+
+            return group_data
+
+    # 3. Other relevant groups
+    for group_name, group in dataset.groups.items():
+        if extracted_group_metadata := extract_group_metadata(group):
+            metadata[group_name] = extracted_group_metadata
+
+    # create XML
+    xmlstring = dicttoxml(metadata, attr_type=False)
+    tree_root = etree.fromstring(xmlstring)
+    tree = etree.ElementTree(tree_root)
+
+    return tree
+
 
 class load_mappings():
     def __new__(self, mappings_file, column = None):
@@ -264,9 +320,7 @@ def extract(scene, csv_file, dict_filler = dictFiller):
             # parse into XML etree
             log.debug("Input from: %s type: %s", metadata_source, type(metadata_source))
             if netCDF4 and isinstance(metadata_source, netCDF4.Dataset):
-                xmlstring = dicttoxml(metadata_source.__dict__)
-                tree_root = etree.fromstring(xmlstring)
-                tree = etree.ElementTree(tree_root)
+                tree = build_xml_from_netcdf(metadata_source)
 
                 if log.level == logging.DEBUG:
                     # Print help for writing mappings.csv files
