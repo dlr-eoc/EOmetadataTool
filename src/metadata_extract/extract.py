@@ -223,6 +223,78 @@ class metafile_readers():
         metafile = netCDF4.Dataset(inputfile)
         return metafile
 
+
+class DataTypeHandling:
+
+    # Check data type of target metadata entry
+    @staticmethod
+    def type_handling(value, data_type):
+
+        string_parser = dict(Int=int, Int64=int, Double=float)
+
+        log.debug("typeHandling input dataType=%s: %s %s", data_type, value, type(value).__name__)
+
+        if data_type in ["String", "Geography"]:
+            value = str(value)
+        elif data_type in ["Int", "Int64", "Double"]:
+            value = string_parser[data_type](str(value))
+            if math.isnan(value):
+                value = None
+        elif data_type == "Boolean":
+            value = str(value[0]).upper()
+        elif data_type in ["DateTime", "DateTimeOffset"]:
+            try:
+                # ensure ISO8601 UTC DateTime always has a 'Z' at the end
+                value = str(value).replace("Z", "").replace("UTC=", "").replace(",", "") + "Z"
+            except Exception as e:
+                log.error("Failed to extract DateTime value from: %s", str(value), e)
+                value = "???"
+        elif data_type == "WKT":
+            # split string at every second space if no comma is contained (Sentinel-3)
+            n = 2 if str(value).find(",") == -1 else 1
+            coordinates = re.findall(" ".join(["[^ ]+"] * n), str(value))
+            value = DataTypeHandling.to_wkt(coordinates)
+            data_type= "Geography"
+        elif data_type in ["List", "tileId", "JoinString", "Geo_Pnt", "QualityStatus", "Ascending_Flag",
+                           "AscendingFlag", "FrameSetFootprint"]:
+            log.error(f"Datatype {data_type} not supported. Please use one of 'String', 'Int', 'Int64',"
+                      f" 'Double', 'Boolean', 'DateTime', 'DateTimeOffset', 'WKT', 'Geography' or "
+                      f"a valid x-path function to obtain your desired output. Returning {value} instead.")
+        else:
+            log.error(f"Unknown dataType {data_type}. Returning {value} instead.")
+
+        log.debug(f"typeHandling output dataType={data_type}: {str(value)} {type(value).__name__}")
+
+        return value, data_type
+
+    # Convert lat,lon coordinate list into WKT (lon lat) list.
+    # Returns a WKT POINT, LINESTRING or POLYGON.
+    @staticmethod
+    def to_wkt(coordinates):
+        log.debug(f"to_wkt - coordinates {coordinates}")
+        count = len(coordinates)
+        # reverse "lat,lon" into "lon lat" (Sentinel-1 and -2)
+        coordinate_string = sep = ""
+        for point in coordinates:
+            lat,lon = re.split("[, ]", point)
+            coordinate_string += sep + lon + " " + lat
+            sep = ", "
+        # convert to POINT, LINESTRING or POLYGON
+        if count == 1:
+            wkt = f"POINT({coordinate_string})"
+        elif count == 2:
+            wkt = f"LINESTRING({coordinate_string})"
+        else:
+            if coordinates[0] != coordinates[count - 1]:
+                # close polygon
+                latlon = coordinates[0].split(",")
+                coordinate_string += ", " + latlon[1] + " " + latlon[0]
+            if count < 3:
+                raise Exception("insufficient coordinate points " + " ".join(coordinates))
+            wkt = f"POLYGON(({coordinate_string}))"
+        return wkt
+
+
 # This function can be replaced during the extract() call
 def dictFiller(data, name, type, value):
     #data[name] = {"Name": name, "Value": value, "Type": type}
@@ -264,9 +336,6 @@ def extract(scene, csv_file, dict_filler = dictFiller):
     dict_filler(mapped_metadata, 'filename', 'String', filename)
     dict_filler(mapped_metadata, 'identifier', 'String', identifier)
 
-    # data type specific parsers
-    dataTypeStringParser = dict(Int=int, Int64=int, Double=float, String=str)
-
     # register extension functions for lxml.etree
     ns = etree.FunctionNamespace(None)
     ns['regex-capture'] = regex_capture
@@ -278,7 +347,7 @@ def extract(scene, csv_file, dict_filler = dictFiller):
     ns['date_format'] = date_format
     ns['geo_pnt2wkt'] = geo_pnt2wkt
     ns['from_json'] = from_json_function
-    ns['WKT'] = toWkt
+    ns['WKT'] = DataTypeHandling.to_wkt
 
     for metafile, queries in metadata_mapping.items():
         log.debug("metafile: %s", metafile)
@@ -361,7 +430,10 @@ def extract(scene, csv_file, dict_filler = dictFiller):
             # If target metadata entry is "static" --> store the value provided in the mapping-file source column.
             if metafile == 'static':
                 value = product_type(filename) if xpath == 'productType' else xpath
-                dict_filler(mapped_metadata, name, dataType, value)
+                # data type specific conversions
+                value, data_type_updated = DataTypeHandling.type_handling(value, dataType)
+                # Now write all information to the "data"-dictionary.
+                dict_filler(mapped_metadata, name, data_type_updated, value)
                 continue
             
             # attribute is skipped on empty xpath
@@ -396,34 +468,11 @@ def extract(scene, csv_file, dict_filler = dictFiller):
             if not isinstance(value, float) and isinstance(value, list) and len(value) == 0 or value == None:
                 continue
 
-            log.debug("typeHandling input dataType=%s: %s %s", dataType, value, type(value).__name__)
-
-            if dataType == 'String':
-                value = str(value)
-            elif dataType in ['Int', 'Int64', 'Double']:
-                value = dataTypeStringParser[dataType](str(value))
-                if math.isnan(value):
-                    value = None
-            elif dataType == 'Boolean':
-                value = str(value[0]).upper()
-            elif dataType in ['DateTime', 'DateTimeOffset']:
-                try:
-                    # ensure ISO8601 UTC DateTime always has a 'Z' at the end
-                    value = str(value).replace('Z', '').replace('UTC=', '').replace(',', '') + "Z"
-                except Exception as e:
-                    log.error("Failed to extract DateTime value from: %s", str(value), e)
-                    value = '???'
-            elif dataType == 'Geography':
-                value = str(value)
-            else:
-                log.warning("keeping unknown dataType=%s: %s %s", dataType, str(value), type(value).__name__)
-
-            log.debug("typeHandling output dataType=%s: %s %s", dataType, str(value), type(value).__name__)
+            # data type specific conversions
+            value, data_type_updated = DataTypeHandling.type_handling(value, dataType)
 
             # Now write all information to the "data"-dictionary.
-            dict_filler(mapped_metadata, name, dataType, value)
-
-        # mappings per metadata file
+            dict_filler(mapped_metadata, name, data_type_updated, value)
 
     return mapped_metadata
 
