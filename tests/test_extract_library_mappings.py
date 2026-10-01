@@ -28,7 +28,7 @@ from clas.getRule import mapping_rule
 MAPPINGS = LIBDIR + '/mappings'
 
 # test data and references
-DATADIR = BASEDIR.joinpath("data/scenes_for_library_mapping")
+DATADIR = BASEDIR.joinpath("data/scenes_for_library_mappings")
 REFDIR  = BASEDIR.joinpath("references/extract")
 
 # locate all zip test data files and map to its json reference
