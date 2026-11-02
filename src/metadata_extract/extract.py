@@ -447,7 +447,13 @@ def extract(scene, csv_file, dict_filler = dictFiller):
     return mapped_metadata
 
 def get_etree_element_value(value_tmp):
-    if len(value_tmp) > 0:
+    if value_tmp is None:
+        log.debug("Skipping None value")
+        return None
+    if isinstance(value_tmp, float):
+        value_tmp = [str(value_tmp)]
+        value = value_tmp[0]
+    elif len(value_tmp) > 0:
         # take first match when xpath returned a list
         if isinstance(value_tmp, list):
             value = value_tmp[0]
