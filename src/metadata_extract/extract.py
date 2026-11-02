@@ -241,7 +241,7 @@ class DataTypeHandling:
             if math.isnan(value):
                 value = None
         elif data_type == "Boolean":
-            value = str(value[0]).upper()
+            value = str(value[0]).upper() + str(value[1:]).lower()
         elif data_type in ["DateTime", "DateTimeOffset"]:
             try:
                 # ensure ISO8601 UTC DateTime always has a "Z" at the end
