@@ -35,13 +35,13 @@ if sys.version_info < (3, 7):
 # Development and mounted
 #from clas.getProductType import product_type
 #from clas.getCollection import collection
-#from clas.getRule import mapping_rule 
+#from clas.getRule import mapping_rule
 
 # Extract package helpers
 sys.path.append(os.path.dirname(__file__))
 from clas.getProductType import product_type
 from clas.getCollection import collection
-from clas.getRule import mapping_rule 
+from clas.getRule import mapping_rule
 
 
 log = logging.getLogger("metadata_extract")
@@ -114,7 +114,7 @@ class load_mappings():
 
         mappings_rules = dict()
         mappings_rules['static'] = dict()
-        
+
         with open(mappings_file, 'r', newline='') as csvfile:
             reader = csv.DictReader(csvfile, delimiter=';')
 
@@ -223,6 +223,48 @@ class metafile_readers():
         metafile = netCDF4.Dataset(inputfile)
         return metafile
 
+
+class DataTypeHandling:
+
+    # Check data type of target metadata entry
+    @staticmethod
+    def type_handling(value, data_type):
+
+        string_parser = dict(Int=int, Int64=int, Double=float)
+
+        log.debug(f"typeHandling input data_type = {data_type}: {value}")
+
+        if data_type == "String":
+            value = str(value)
+        elif data_type in ["Int", "Int64", "Double"]:
+            value = string_parser[data_type](str(value))
+            if math.isnan(value):
+                value = None
+        elif data_type == "Boolean":
+            value = str(value[0]).upper()
+        elif data_type in ["DateTime", "DateTimeOffset"]:
+            try:
+                # ensure ISO8601 UTC DateTime always has a "Z" at the end
+                value = str(value).replace("Z", "").replace("UTC=", "").replace(",", "") + "Z"
+            except Exception as e:
+                log.error(f"Failed to extract DateTime value from: {str(value)}", e)
+                value = "???"
+        elif data_type == "Geography":
+            value = str(value)
+        elif data_type in ["List", "tileId", "JoinString", "Geo_Pnt", "QualityStatus", "Ascending_Flag",
+                           "AscendingFlag", "FrameSetFootprint", "WKT"]:
+            log.warning(f"data_type {data_type} deprecated and not supported anymore. Please use one of "
+                      f"'String', 'Int', 'Int64', 'Double', 'Boolean', 'DateTime', 'DateTimeOffset', "
+                      f"'Geography' or a valid x-path function to obtain your desired output."
+                      f"Returning {value} instead.")
+        else:
+            log.warning(f"Keeping unknown data_type = {data_type}: Returning {value} instead.")
+
+        log.debug(f"Output of type_handling: data_type = {data_type}: {str(value)}")
+
+        return value, data_type
+
+
 # This function can be replaced during the extract() call
 def dictFiller(data, name, type, value):
     #data[name] = {"Name": name, "Value": value, "Type": type}
@@ -264,9 +306,6 @@ def extract(scene, csv_file, dict_filler = dictFiller):
     dict_filler(mapped_metadata, 'filename', 'String', filename)
     dict_filler(mapped_metadata, 'identifier', 'String', identifier)
 
-    # data type specific parsers
-    dataTypeStringParser = dict(Int=int, Int64=int, Double=float, String=str)
-
     # register extension functions for lxml.etree
     ns = etree.FunctionNamespace(None)
     ns['regex-capture'] = regex_capture
@@ -278,12 +317,12 @@ def extract(scene, csv_file, dict_filler = dictFiller):
     ns['date_format'] = date_format
     ns['geo_pnt2wkt'] = geo_pnt2wkt
     ns['from_json'] = from_json_function
-    ns['WKT'] = toWkt
+    ns['WKT'] = to_wkt
 
     for metafile, queries in metadata_mapping.items():
         log.debug("metafile: %s", metafile)
         log.debug("queries: %s", queries)
-            
+
         # Read metadata source file with corresponding reader (.zip, .tar, folder)
         if metafile != 'static':
 
@@ -361,9 +400,12 @@ def extract(scene, csv_file, dict_filler = dictFiller):
             # If target metadata entry is "static" --> store the value provided in the mapping-file source column.
             if metafile == 'static':
                 value = product_type(filename) if xpath == 'productType' else xpath
-                dict_filler(mapped_metadata, name, dataType, value)
+                # data type specific conversions
+                value, data_type_updated = DataTypeHandling.type_handling(value, dataType)
+                # Now write all information to the "data"-dictionary.
+                dict_filler(mapped_metadata, name, data_type_updated, value)
                 continue
-            
+
             # attribute is skipped on empty xpath
             if len(xpath) == 0:
                 continue
@@ -396,34 +438,11 @@ def extract(scene, csv_file, dict_filler = dictFiller):
             if not isinstance(value, float) and isinstance(value, list) and len(value) == 0 or value == None:
                 continue
 
-            log.debug("typeHandling input dataType=%s: %s %s", dataType, value, type(value).__name__)
-
-            if dataType == 'String':
-                value = str(value)
-            elif dataType in ['Int', 'Int64', 'Double']:
-                value = dataTypeStringParser[dataType](str(value))
-                if math.isnan(value):
-                    value = None
-            elif dataType == 'Boolean':
-                value = str(value[0]).upper()
-            elif dataType in ['DateTime', 'DateTimeOffset']:
-                try:
-                    # ensure ISO8601 UTC DateTime always has a 'Z' at the end
-                    value = str(value).replace('Z', '').replace('UTC=', '').replace(',', '') + "Z"
-                except Exception as e:
-                    log.error("Failed to extract DateTime value from: %s", str(value), e)
-                    value = '???'
-            elif dataType == 'Geography':
-                value = str(value)
-            else:
-                log.warning("keeping unknown dataType=%s: %s %s", dataType, str(value), type(value).__name__)
-
-            log.debug("typeHandling output dataType=%s: %s %s", dataType, str(value), type(value).__name__)
+            # data type specific conversions
+            value, data_type_updated = DataTypeHandling.type_handling(value, dataType)
 
             # Now write all information to the "data"-dictionary.
-            dict_filler(mapped_metadata, name, dataType, value)
-
-        # mappings per metadata file
+            dict_filler(mapped_metadata, name, data_type_updated, value)
 
     return mapped_metadata
 
@@ -496,7 +515,7 @@ def join_function(context, a, join_separator=', '):
         return a
 
 @ns
-def toWkt(context, a):
+def to_wkt(context, a):
     # Convert lat,lon coordinate list into WKT (lon lat) list.
     # Returns a WKT POINT, LINESTRING or POLYGON.
 
@@ -538,7 +557,7 @@ def geo_pnt2wkt(context, a):
             lat = pnt.xpath("*[local-name()='LATITUDE']")[0].text
             lng = pnt.xpath("*[local-name()='LONGITUDE']")[0].text
             coordinates.append('%s,%s' % (lat, lng))
-        value = toWkt(context, coordinates)
+        value = to_wkt(context, coordinates)
     else:
         log.warning("skipping Geo_Pnt extraction for %s (%s)", a, type(a).__name__)
         return None
@@ -578,7 +597,7 @@ def parse_timedelta(time_str):
         log.warning("Could not parse any time information from '{}'." +
             "  Examples of valid strings: '8h', '2d8h5m20s', '2m4s'".format(time_str))
     time_params = {name: float(param) for name, param in parts.groupdict().items() if param}
-    return timedelta(**time_params)   
+    return timedelta(**time_params)
 
 @ns
 def date_format(context, a, format='%Y-%m-%dT%H:%M:%SZ', date_add_delta=''):
@@ -602,7 +621,7 @@ if __name__ == "__main__":
     parser.add_argument("--mapping", type=str, help="Mapping CSV file with attributes to ", required=True)
     parser.add_argument("--template", type=str, help="jinja template", required=False)
     parser.add_argument("--set", metavar="KEY=VALUE", nargs='+', help="enter key=value pairs to place in dict", required=False)
-    parser.add_argument('-d', '--debug', help="debugging logs", action="store_const", dest="loglevel", const=logging.DEBUG, 
+    parser.add_argument('-d', '--debug', help="debugging logs", action="store_const", dest="loglevel", const=logging.DEBUG,
         default=logging.WARNING)
     parser.add_argument('-v', '--verbose', help="verbose logs", action="store_const", dest="loglevel", const=logging.INFO)
     args = parser.parse_args()
@@ -626,7 +645,7 @@ if __name__ == "__main__":
             if "=" in item:
                 key, value = item.split('=')
                 dictFiller(extracted_metadata, key, "String", value)
-    
+
     if args.template:
         from jinja2 import Environment, FileSystemLoader
         file_loader = FileSystemLoader('.')
