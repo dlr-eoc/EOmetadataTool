@@ -17,6 +17,8 @@ from clas.getCollection import collection
 from clas.getProductType import product_type
 from clas.getRule import mapping_rule
 
+log = logging.getLogger("metadata_extract")
+log.setLevel(logging.DEBUG)
 
 def md5sum(filename, blocksize=65536):
     md5 = hashlib.md5()
@@ -57,7 +59,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # configure logging
-    logging.basicConfig(level=args.loglevel, format='%(asctime)s %(levelname)s %(message)s')
+    log_handler = logging.StreamHandler()
+    log_format = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+    log_handler.setFormatter(log_format)
+    log_handler.setLevel(args.loglevel)
+    log.addHandler(log_handler)
 
     context = {}
     context['filename'] = args.scene

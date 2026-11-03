@@ -35,16 +35,75 @@ if sys.version_info < (3, 7):
 # Development and mounted
 #from clas.getProductType import product_type
 #from clas.getCollection import collection
-#from clas.getRule import mapping_rule 
+#from clas.getRule import mapping_rule
 
 # Extract package helpers
 sys.path.append(os.path.dirname(__file__))
 from clas.getProductType import product_type
 from clas.getCollection import collection
-from clas.getRule import mapping_rule 
+from clas.getRule import mapping_rule
 
-# Reads and parses mappings file (csv).
-# Returns dictionary with metadata tag mappings (source tag name -> target tag name).
+
+log = logging.getLogger("metadata_extract")
+log.setLevel(logging.DEBUG)
+
+
+def build_xml_from_netcdf(dataset: netCDF4.Dataset) -> etree.ElementTree:
+    """Extracts metadata attributes from NetCDF regardless of structure.
+
+    Args:
+        dataset: A netCDF4.Dataset containing the metadata attributes.
+
+    Returns:
+        An XML tree containing the extracted metadata from the NetCDF file.
+    """
+    metadata = {}
+
+    # 1. Global Attributes (works for Sentinel-5P)
+    if dataset.ncattrs():
+        for attr in dataset.ncattrs():
+            try:
+                metadata[attr] = getattr(dataset, attr)
+            except Exception as e:
+                log.error(f"Unable to retrieve attribute {attr} due to error {e}")
+                metadata[attr] = ""
+
+    # 2. Global Attributes (works for MetOp)
+    if dataset.groups:
+
+        # Recursively through all metadata groups
+        def extract_group_metadata(group):
+            group_data = {}
+
+            # Group Attribute
+            if group.ncattrs():
+                for attr in group.ncattrs():
+                    try:
+                        group_data[attr] = getattr(group, attr)
+                    except Exception as e:
+                        log.error(f"Unable to retrieve attribute {attr} due to error {e}")
+                        group_data[attr] = ""
+
+            # subgroups
+            if group.groups:
+                for subgroup_name, subgroup in group.groups.items():
+                    if extracted_subgroup_metadata := extract_group_metadata(subgroup):
+                        group_data[subgroup_name] = extracted_subgroup_metadata
+
+            return group_data
+
+    # 3. Other relevant groups
+    for group_name, group in dataset.groups.items():
+        if extracted_group_metadata := extract_group_metadata(group):
+            metadata[group_name] = extracted_group_metadata
+
+    # create XML
+    xmlstring = dicttoxml(metadata, attr_type=False)
+    tree_root = etree.fromstring(xmlstring)
+    tree = etree.ElementTree(tree_root)
+
+    return tree
+
 
 class load_mappings():
     def __new__(self, mappings_file, column = None):
@@ -55,12 +114,12 @@ class load_mappings():
 
         mappings_rules = dict()
         mappings_rules['static'] = dict()
-        
+
         with open(mappings_file, 'r', newline='') as csvfile:
             reader = csv.DictReader(csvfile, delimiter=';')
 
             for row in reader:
-                #logging.debug("row_keys: %s", row.keys())
+                #log.debug("row_keys: %s", row.keys())
                 if row[column] == '':
                     continue
                 if row[column].startswith('='):
@@ -85,7 +144,7 @@ class metafile_readers():
             raise Exception("Metafile %s could not be found" % metafile)
         else:
             metafile = files[0]
-            logging.debug("metadata file found in ZIP: %s", metafile)
+            log.debug("metadata file found in ZIP: %s", metafile)
         #else:
         #    metafile = os.path.join(os.path.basename(os.path.splitext(inputfile)[0]), metafile)
         metafile = archive.open(metafile)
@@ -102,7 +161,7 @@ class metafile_readers():
             raise Exception("Metafile %s could not be found" % metafile)
         else:
             metafile = files[0]
-            logging.debug("metadata file found in TAR: %s", metafile)
+            log.debug("metadata file found in TAR: %s", metafile)
 
         #else:
         #    metafile = os.path.join(os.path.basename(os.path.splitext(inputfile)[0]), metafile)
@@ -112,7 +171,7 @@ class metafile_readers():
     # Reads file (metafile) from zip file (inputfile).
     # Returns opened file stream.
     def read_from_gzip(self, inputfile, metafile):
-        logging.debug("metadata file found in gzip: %s", metafile)
+        log.debug("metadata file found in gzip: %s", metafile)
         metafile = gzip.open(inputfile, 'rb')
         return metafile
 
@@ -122,20 +181,20 @@ class metafile_readers():
         if len(glob.glob(scenefolder + "/" + metafile)) > 0:
             if metafile.endswith(".nc"):
                 inputfiles = glob.glob(scenefolder + "/" + metafile)
-                logging.debug("inputfiles: %s", inputfiles[0])
+                log.debug("inputfiles: %s", inputfiles[0])
                 metafile = inputfiles[0]
-                logging.debug("metadata file found in DIR: %s", metafile)
+                log.debug("metadata file found in DIR: %s", metafile)
                 return metafile
-        logging.debug("scene ordner: %s %s", scenefolder, metafile)
+        log.debug("scene ordner: %s %s", scenefolder, metafile)
         if '*' in metafile:
             if os.path.isdir(scenefolder):
                 metafiles = glob.glob(os.path.join(scenefolder, metafile), recursive=True)
                 if len(metafiles) == 0:
-                    logging.warn("Metafile %s could not be found" % metafile)
+                    log.warning("Metafile %s could not be found" % metafile)
                     return None
                 else:
                     metafile = metafiles[0]
-                    logging.debug("metadata file found in DIR: %s", metafile)
+                    log.debug("metadata file found in DIR: %s", metafile)
             elif fnmatch.fnmatch(scenefolder, metafile):
                 # metafile pattern matches filename
                 metafile = scenefolder
@@ -151,18 +210,60 @@ class metafile_readers():
     def read_from_jp2(self, inputfile, metafile):
         image = gdal.Open(inputfile)
         metafile = image.GetMetadata(metafile)[0]
-        logging.debug("metadata file found in JP2000: %s", metafile)
+        log.debug("metadata file found in JP2000: %s", metafile)
         return BytesIO(bytes(metafile, encoding='ISO-8859-1'))
 
     def read_from_netcdf(self, inputfile, metafile):
         if not netCDF4:
-            logging.error("NetCDF library unavailable, extraction failed")
+            log.error("NetCDF library unavailable, extraction failed")
             return None
         if os.path.isdir(inputfile):
             inputfile = glob.glob(os.path.join(inputfile, metafile))[0]
-        logging.debug("metadata file found in NetCDF: %s", inputfile)
+        log.debug("metadata file found in NetCDF: %s", inputfile)
         metafile = netCDF4.Dataset(inputfile)
         return metafile
+
+
+class DataTypeHandling:
+
+    # Check data type of target metadata entry
+    @staticmethod
+    def type_handling(value, data_type):
+
+        string_parser = dict(Int=int, Int64=int, Double=float)
+
+        log.debug(f"typeHandling input data_type = {data_type}: {value}")
+
+        if data_type == "String":
+            value = str(value)
+        elif data_type in ["Int", "Int64", "Double"]:
+            value = string_parser[data_type](str(value))
+            if math.isnan(value):
+                value = None
+        elif data_type == "Boolean":
+            value = str(value[0]).upper() + str(value[1:]).lower()
+        elif data_type in ["DateTime", "DateTimeOffset"]:
+            try:
+                # ensure ISO8601 UTC DateTime always has a "Z" at the end
+                value = str(value).replace("Z", "").replace("UTC=", "").replace(",", "") + "Z"
+            except Exception as e:
+                log.error(f"Failed to extract DateTime value from: {str(value)}", e)
+                value = "???"
+        elif data_type == "Geography":
+            value = str(value)
+        elif data_type in ["List", "tileId", "JoinString", "Geo_Pnt", "QualityStatus", "Ascending_Flag",
+                           "AscendingFlag", "FrameSetFootprint", "WKT"]:
+            log.warning(f"data_type {data_type} deprecated and not supported anymore. Please use one of "
+                      f"'String', 'Int', 'Int64', 'Double', 'Boolean', 'DateTime', 'DateTimeOffset', "
+                      f"'Geography' or a valid x-path function to obtain your desired output."
+                      f"Returning {value} instead.")
+        else:
+            log.warning(f"Keeping unknown data_type = {data_type}: Returning {value} instead.")
+
+        log.debug(f"Output of type_handling: data_type = {data_type}: {str(value)}")
+
+        return value, data_type
+
 
 # This function can be replaced during the extract() call
 def dictFiller(data, name, type, value):
@@ -176,8 +277,8 @@ def dictFiller(data, name, type, value):
 # csv_file: Mapping file / CSV-file which contains information on how to map metadata tags from "scene"
 #
 def extract(scene, csv_file, dict_filler = dictFiller):
-    logging.debug("Scene: %s", scene)
-    logging.debug("Mapping file: %s", csv_file)
+    log.info("Scene: %s", scene)
+    log.info("Mapping file: %s", csv_file)
 
     # Check input file or folder
     if not os.path.exists(scene):
@@ -185,12 +286,10 @@ def extract(scene, csv_file, dict_filler = dictFiller):
 
     # Instantiate "readers" class
     readers = metafile_readers()
-    logging.debug("readers: %s", type(readers))
 
-    logging.debug("current workdir %s %s", os.getcwd(), csv_file)
+    log.debug("current workdir %s %s", os.getcwd(), csv_file)
 
     # Load metadata mapping.
-    logging.debug("Looking for CSV: %s", csv_file)
     metadata_mapping = load_mappings(csv_file)
 
     # raise Exception("ERROR: mapping file missing " + csv_file)
@@ -207,9 +306,6 @@ def extract(scene, csv_file, dict_filler = dictFiller):
     dict_filler(mapped_metadata, 'filename', 'String', filename)
     dict_filler(mapped_metadata, 'identifier', 'String', identifier)
 
-    # data type specific parsers
-    dataTypeStringParser = dict(Int=int, Int64=int, Double=float, String=str)
-
     # register extension functions for lxml.etree
     ns = etree.FunctionNamespace(None)
     ns['regex-capture'] = regex_capture
@@ -221,19 +317,19 @@ def extract(scene, csv_file, dict_filler = dictFiller):
     ns['date_format'] = date_format
     ns['geo_pnt2wkt'] = geo_pnt2wkt
     ns['from_json'] = from_json_function
-    ns['WKT'] = toWkt
+    ns['WKT'] = to_wkt
 
     for metafile, queries in metadata_mapping.items():
-        logging.debug("metafile: %s", metafile)
-        logging.debug("queries: %s", queries)
-            
+        log.debug("metafile: %s", metafile)
+        log.debug("queries: %s", queries)
+
         # Read metadata source file with corresponding reader (.zip, .tar, folder)
         if metafile != 'static':
 
             # Determine type of scene.
             scene_type = '.tar.gz' if scene.endswith('.tar.gz') else os.path.splitext(scene)[1].lower()
             metadata_type = '.tar.gz' if metafile.endswith('.tar.gz') else os.path.splitext(metafile)[1].lower()
-            logging.debug("scene %s, metafile %s, type: %s", scene, metafile, scene_type)
+            log.debug("scene %s, metafile %s, type: %s", scene, metafile, scene_type)
 
             # read from metadata file from known types of packages
             if scene_type == '.nc' or metadata_type == '.nc':
@@ -253,7 +349,7 @@ def extract(scene, csv_file, dict_filler = dictFiller):
             elif os.path.isfile(scene):
                 metadata_source = readers.read_from_folder(scene, metafile)
             else:
-                logging.debug("")
+                log.debug("")
                 raise TypeError("Unknown scene %s of type %s", scene, scene_type)
 
             ## TODO: improve handling, can occur for missing NetCDF library or when metadata file is not found
@@ -261,11 +357,23 @@ def extract(scene, csv_file, dict_filler = dictFiller):
                 continue
 
             # parse into XML etree
-            logging.debug("Input from: %s type: %s", metadata_source, type(metadata_source))
+            log.debug("Input from: %s type: %s", metadata_source, type(metadata_source))
             if netCDF4 and isinstance(metadata_source, netCDF4.Dataset):
-                xmlstring = dicttoxml(metadata_source.__dict__)
-                tree_root = etree.fromstring(xmlstring)
-                tree = etree.ElementTree(tree_root)                    
+                tree = build_xml_from_netcdf(metadata_source)
+
+                if log.level == logging.DEBUG:
+                    # Print help for writing mappings.csv files
+                    etree.indent(tree.getroot(), space="  ")
+                    pretty_xml = etree.tostring(tree.getroot(), encoding='unicode', pretty_print=True)
+                    log.debug("generated XML:")
+                    log.debug(pretty_xml[:10000] + "..." if len(pretty_xml) > 10000 else pretty_xml)
+
+                    log.debug("\n=== all XPath expressions for NetCDF ===")
+                    for i, element in enumerate(tree.iter()):
+                        xpath = tree.getpath(element)
+                        text_info = f" -> '{element.text.strip()}'" if element.text and element.text.strip() else ""
+                        log.debug(f"{i + 1:2d}. {xpath}{text_info}")
+
             elif metadata_type == '.json':
                 json_data = json.load(metadata_source)
                 xmlstring = dicttoxml(json_data)
@@ -284,42 +392,44 @@ def extract(scene, csv_file, dict_filler = dictFiller):
         for name, (xpath, dataType) in queries.items():
             # skip commented lines in mapping
             if name[0] == '#':
-                logging.debug("skipping name: %s | xpath: %s | dataType: %s", name, xpath, dataType)
+                log.debug("skipping name: %s | xpath: %s | dataType: %s", name, xpath, dataType)
                 continue
 
-            logging.debug("name: %s | xpath: %s | dataType: %s", name, xpath, dataType)
+            log.debug("name: %s | xpath: %s | dataType: %s", name, xpath, dataType)
 
             # If target metadata entry is "static" --> store the value provided in the mapping-file source column.
             if metafile == 'static':
                 value = product_type(filename) if xpath == 'productType' else xpath
-                dict_filler(mapped_metadata, name, dataType, value)
+                # data type specific conversions
+                value, data_type_updated = DataTypeHandling.type_handling(value, dataType)
+                # Now write all information to the "data"-dictionary.
+                dict_filler(mapped_metadata, name, data_type_updated, value)
                 continue
-            
+
             # attribute is skipped on empty xpath
             if len(xpath) == 0:
                 continue
 
             if xpath == "filename":
-                # logging.debug("- extension: Filename")
+                # log.debug("- extension: Filename")
                 value = filename
                 dataType = "String"
 
             elif xpath == "now":
-                # logging.debug("- extension: Now")
+                # log.debug("- extension: Now")
                 value = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
                 dataType = "DateTime"
 
             else:
                 # Check for value.
                 try:
-                    ##print("xpath:", xpath)
                     value_tmp = tree.xpath(xpath, namespaces=ns)
                     ##print("xpath returned:", value_tmp, len(value_tmp), type(value_tmp).__name__)
-                    logging.debug("xpath returned: %s (%s)", value_tmp, type(value_tmp).__name__)
+                    log.debug("xpath returned: %s (%s)", value_tmp, type(value_tmp).__name__)
                     # resolve Element, list or string value
                     value = get_etree_element_value(value_tmp)
                 except Exception as ex:
-                    logging.warning("extracting %s with XPath: %s", name, xpath, exc_info=ex)
+                    log.warning("extracting %s with XPath: %s", name, xpath, exc_info=ex)
                     continue
 
             ##print("value for", name, 'with xpath:', xpath, "returned:", value)
@@ -328,39 +438,22 @@ def extract(scene, csv_file, dict_filler = dictFiller):
             if not isinstance(value, float) and isinstance(value, list) and len(value) == 0 or value == None:
                 continue
 
-            logging.debug("typeHandling input dataType=%s: %s %s", dataType, value, type(value).__name__)
-
-            if dataType == 'String':
-                value = str(value)
-            elif dataType in ['Int', 'Int64', 'Double']:
-                value = dataTypeStringParser[dataType](str(value))
-                if math.isnan(value):
-                    value = None
-            elif dataType == 'Boolean':
-                value = str(value[0]).upper()
-            elif dataType in ['DateTime', 'DateTimeOffset']:
-                try:
-                    # ensure ISO8601 UTC DateTime always has a 'Z' at the end
-                    value = str(value).replace('Z', '').replace('UTC=', '').replace(',', '') + "Z"
-                except Exception as e:
-                    logging.error("Failed to extract DateTime value from: %s", str(value), e)
-                    value = '???'
-            elif dataType == 'Geography':
-                value = str(value)
-            else:
-                logging.warning("keeping unknown dataType=%s: %s %s", dataType, str(value), type(value).__name__)
-
-            logging.debug("typeHandling output dataType=%s: %s %s", dataType, str(value), type(value).__name__)
+            # data type specific conversions
+            value, data_type_updated = DataTypeHandling.type_handling(value, dataType)
 
             # Now write all information to the "data"-dictionary.
-            dict_filler(mapped_metadata, name, dataType, value)
-
-        # mappings per metadata file
+            dict_filler(mapped_metadata, name, data_type_updated, value)
 
     return mapped_metadata
 
 def get_etree_element_value(value_tmp):
-    if len(value_tmp) > 0:
+    if value_tmp is None:
+        log.debug("Skipping None value")
+        return None
+    if isinstance(value_tmp, float):
+        value_tmp = [str(value_tmp)]
+        value = value_tmp[0]
+    elif len(value_tmp) > 0:
         # take first match when xpath returned a list
         if isinstance(value_tmp, list):
             value = value_tmp[0]
@@ -374,7 +467,7 @@ def get_etree_element_value(value_tmp):
         else:
             value = str(value_tmp)
     else:
-        logging.debug("skipping empty %s (%s)", value_tmp, type(value_tmp).__name__)
+        log.debug("skipping empty %s (%s)", value_tmp, type(value_tmp).__name__)
         return None
     return value
 
@@ -385,24 +478,24 @@ def save(data, outputfile):
 @ns
 def uppercase(context, a):
     value = get_etree_element_value(a)
-    logging.debug("uppercase for: %s", value)
+    log.debug("uppercase for: %s", value)
     try:
       value = value.upper()
-      logging.debug("uppercase produced: %s", value)
+      log.debug("uppercase produced: %s", value)
     except:
-        #logging.warning("uppercase ignoring value: %s", value)
+        #log.warning("uppercase ignoring value: %s", value)
         return None
     return value
 
 @ns
 def lowercase(context, a):
     value = get_etree_element_value(a)
-    logging.debug("lowercase for: %s", value)
+    log.debug("lowercase for: %s", value)
     try:
         value = value.lower()
-        logging.debug("lowercase produced: %s", value)
+        log.debug("lowercase produced: %s", value)
     except:
-        #logging.warning("lowercase ignoring value: %s", value)
+        #log.warning("lowercase ignoring value: %s", value)
         return None
     return value
 
@@ -413,28 +506,28 @@ def quote(context, a):
 @ns
 def regex_capture(context, a, regex_str):
     value = get_etree_element_value(a)
-    logging.debug("regex_capture for: %s with %s", value, regex_str)
+    log.debug("regex_capture for: %s with %s", value, regex_str)
     value = re.search(regex_str, value).group()
-    logging.debug("regex_capture retruns: %s", value)
+    log.debug("regex_capture retruns: %s", value)
     return value
 
 @ns
 def join_function(context, a, join_separator=', '):
-    logging.debug("join_function for: %s", join_separator.join(a))
+    log.debug("join_function for: %s", join_separator.join(a))
     try:
         return join_separator.join(a)
     except:
-        logging.warning("join_function ignoring value: %s", a)
+        log.warning("join_function ignoring value: %s", a)
         return a
 
 @ns
-def toWkt(context, a):
+def to_wkt(context, a):
     # Convert lat,lon coordinate list into WKT (lon lat) list.
     # Returns a WKT POINT, LINESTRING or POLYGON.
 
     value = get_etree_element_value(a)
 
-    logging.debug("toWkt - coordinates %s", value)
+    log.debug("toWkt - coordinates %s", value)
 
     # split string at every second space if no comma is contained (Sentinel-3)
     n = 2 if value.find(',') == -1 else 1
@@ -470,9 +563,9 @@ def geo_pnt2wkt(context, a):
             lat = pnt.xpath("*[local-name()='LATITUDE']")[0].text
             lng = pnt.xpath("*[local-name()='LONGITUDE']")[0].text
             coordinates.append('%s,%s' % (lat, lng))
-        value = toWkt(context, coordinates)
+        value = to_wkt(context, coordinates)
     else:
-        logging.warning("skipping Geo_Pnt extraction for %s (%s)", a, type(a).__name__)
+        log.warning("skipping Geo_Pnt extraction for %s (%s)", a, type(a).__name__)
         return None
     return value
 
@@ -487,16 +580,16 @@ def map_function(context, a, map_string):
        map(lowercase(orbit_direction), '{"asc":"ASCENDING","ascending":"ASCENDING","default":"DESCENDING"}')
     """
     value = get_etree_element_value(a)
-    logging.debug("map_function for: %s with %s", value, map_string)
+    log.debug("map_function for: %s with %s", value, map_string)
     lookup = json.loads(map_string)
     value = lookup[value] if value in lookup.keys() else lookup['default']
-    logging.debug("map_function decoded input: %s", value)
+    log.debug("map_function decoded input: %s", value)
     return value
 
 @ns
 def from_json_function(context, a):
     value = json.loads(get_etree_element_value(a))
-    logging.debug("from_json_function for: %s", value)
+    log.debug("from_json_function for: %s", value)
     return value
 
 
@@ -507,10 +600,10 @@ def parse_timedelta(time_str):
     """
     parts = timedelta_regex.match(time_str)
     if parts is not None:
-        logging.warning("Could not parse any time information from '{}'." +
+        log.warning("Could not parse any time information from '{}'." +
             "  Examples of valid strings: '8h', '2d8h5m20s', '2m4s'".format(time_str))
     time_params = {name: float(param) for name, param in parts.groupdict().items() if param}
-    return timedelta(**time_params)   
+    return timedelta(**time_params)
 
 @ns
 def date_format(context, a, format='%Y-%m-%dT%H:%M:%SZ', date_add_delta=''):
@@ -518,11 +611,11 @@ def date_format(context, a, format='%Y-%m-%dT%H:%M:%SZ', date_add_delta=''):
     simple date math with reformatting (e.g. for clipping and rounding)
     """
     value = get_etree_element_value(a)
-    logging.debug("date_trim for: %s with %s", value, format)
+    log.debug("date_trim for: %s with %s", value, format)
     d = datetime.fromisoformat(value)
     delta = parse_timedelta(date_add_delta) if len(date_add_delta) > 0 else timedelta()
     value = datetime.strftime(d + delta, format)
-    logging.debug("date_trim retruns: %s", value)
+    log.debug("date_trim retruns: %s", value)
     return value
 
 
@@ -534,13 +627,17 @@ if __name__ == "__main__":
     parser.add_argument("--mapping", type=str, help="Mapping CSV file with attributes to ", required=True)
     parser.add_argument("--template", type=str, help="jinja template", required=False)
     parser.add_argument("--set", metavar="KEY=VALUE", nargs='+', help="enter key=value pairs to place in dict", required=False)
-    parser.add_argument('-d', '--debug', help="debugging logs", action="store_const", dest="loglevel", const=logging.DEBUG, 
+    parser.add_argument('-d', '--debug', help="debugging logs", action="store_const", dest="loglevel", const=logging.DEBUG,
         default=logging.WARNING)
     parser.add_argument('-v', '--verbose', help="verbose logs", action="store_const", dest="loglevel", const=logging.INFO)
     args = parser.parse_args()
 
     # configure logging
-    logging.basicConfig(level=args.loglevel, format='%(asctime)s %(levelname)s %(message)s')
+    log_handler = logging.StreamHandler()
+    log_format = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+    log_handler.setFormatter(log_format)
+    log_handler.setLevel(args.loglevel)
+    log.addHandler(log_handler)
 
     # allow mapping to be specified relative to CWD or within <__file__>/mapping/
     mappings_file = args.mapping if Path(args.mapping).exists() else str(Path(__file__).parent) + "/mappings/" + args.mapping
@@ -554,7 +651,7 @@ if __name__ == "__main__":
             if "=" in item:
                 key, value = item.split('=')
                 dictFiller(extracted_metadata, key, "String", value)
-    
+
     if args.template:
         from jinja2 import Environment, FileSystemLoader
         file_loader = FileSystemLoader('.')

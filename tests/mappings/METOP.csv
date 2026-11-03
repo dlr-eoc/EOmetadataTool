@@ -1,0 +1,18 @@
+metadata;file;mappings;datatype;sample
+properties/start_datetime;*_NO2_*.nc;METADATA/AC_SAF_METADATA/time_coverage_start;DateTime
+properties/end_datetime;*_NO2_*.nc;METADATA/AC_SAF_METADATA/time_coverage_end;DateTime
+properties/platform;*_NO2_*.nc;METADATA/AC_SAF_METADATA/platform;String
+properties/constellation;*_NO2_*.nc;substring(METADATA/AC_SAF_METADATA/platform,1,5);String
+properties/instruments;*_NO2_*.nc;concat(substring(METADATA/AC_SAF_METADATA/sensor,1,4),"-2");String
+properties/license;static;CC-BY 4.0;String
+properties/proj:shape/0;static;720;Int
+properties/proj:shape/1;static;1440;Int
+properties/proj:epsg;static;4326;Int
+properties/proj:bbox/0;*_NO2_*.nc;METADATA/AC_SAF_METADATA/geospatial_longitude_min;Double
+properties/proj:bbox/1;*_NO2_*.nc;METADATA/AC_SAF_METADATA/geospatial_latitude_min;Double
+properties/proj:bbox/2;*_NO2_*.nc;METADATA/AC_SAF_METADATA/geospatial_longitude_max;Double
+properties/proj:bbox/3;*_NO2_*.nc;METADATA/AC_SAF_METADATA/geospatial_latitude_max;Double
+properties/processing:facility;*_NO2_*.nc;METADATA/AC_SAF_METADATA/institution;String
+properties/processing:level;static;L3;String
+processorName;*_NO2_*.nc;METADATA/AC_SAF_METADATA/product_algorithm_name;String
+properties/processing:software/${processorName};*_NO2_*.nc;METADATA/AC_SAF_METADATA/product_algorithm_version;String

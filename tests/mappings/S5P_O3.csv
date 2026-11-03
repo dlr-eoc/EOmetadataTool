@@ -1,0 +1,29 @@
+metadata;file;mappings;datatype;sample
+properties/start_datetime;*_O3_*.nc;time_coverage_start;DateTime
+properties/end_datetime;*_O3_*.nc;time_coverage_end;DateTime
+properties/sci:doi;*_O3_*.nc;identifier_product_doi;String
+properties/platform;*_O3_*.nc;platform;String
+properties/constellation;*_O3_*.nc;platform;String
+properties/instruments;*_O3_*.nc;sensor;String
+properties/license;static;CC-BY 4.0;String
+properties/proj:shape/0;static;1800;Int
+properties/proj:shape/1;static;3600;Int
+properties/proj:epsg;static;4326;Int
+properties/proj:bbox/0;*_O3_*.nc;geospatial_lon_min;Double
+properties/proj:bbox/1;*_O3_*.nc;geospatial_lat_min;Double
+properties/proj:bbox/2;*_O3_*.nc;geospatial_lon_max;Double
+properties/proj:bbox/3;*_O3_*.nc;geospatial_lat_max;Double
+properties/s5p:head_facility;*_O3_*.nc;institution;String
+properties/processing:facility;*_O3_*.nc;creator_name;String
+properties/processing:level;static;L3;String
+processorName;*_O3_*.nc;substring(algorithm_version,1, 4);String
+properties/processing:software/${processorName};*_O3_*.nc;substring(algorithm_version,6, 5);String
+properties/s5p:spatial_resolution;*_O3_*.nc;spatial_resolution;String
+properties/s5p:datasource;*_O3_*.nc;source;String
+properties/s5p:collection_identifier;*_O3_*.nc;collection_identifier;String
+properties/s5p:l2_algorithm_version;*_O3_*.nc;l2_algorithm_version;String
+properties/s5p:product_name;static;o3;String
+properties/product:type;*_O3_*.nc;processing_mode;String
+properties/s5p:collection_identifier;*_O3_*.nc;collection_identifier;String
+properties/s5p:south_pole_ozone_hole_area;*_O3_*.nc;south_pole_ozone_hole_area;Double
+properties/s5p:south_pole_ozone_hole_area_unit;*_O3_*.nc;south_pole_ozone_hole_area_units;String
