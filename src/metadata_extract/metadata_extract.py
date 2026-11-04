@@ -1,7 +1,7 @@
 #!/usr/bin/python3
-from clas.getCollection import collection
-from clas.getProductType import product_type
-from clas.getRule import mapping_rule
+from clas.get_collection import collection
+from clas.get_product_type import product_type
+from clas.get_rule import mapping_rule
 from extract import extract
 import argparse
 import hashlib

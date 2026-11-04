@@ -4,8 +4,8 @@ Testing code for extract.py
 """
 
 from extract import extract
-from clas.getProductType import product_type
-from clas.getRule import mapping_rule
+from clas.get_product_type import product_type as pt
+from clas.get_rule import mapping_rule
 import os
 import sys
 import json
@@ -53,8 +53,8 @@ def test_extract(input_scene, output_reference):
         # TODO: make less environment dependent
         csv_file = os.path.dirname(input_scene) + "/mappings.csv"
     else:
-        productType = product_type(input_scene)
-        rule = mapping_rule(productType, MAPPINGS + "/ProductTypes2RuleMapping.csv")
+        product_type = pt(input_scene)
+        rule = mapping_rule(product_type, MAPPINGS + "/ProductTypes2RuleMapping.csv")
         csv_file = MAPPINGS + "/" + rule + ".csv"
 
     # run extract function

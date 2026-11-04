@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-from clas.getProductType import product_type
+from clas.get_product_type import product_type
 import os
 import csv
 import json

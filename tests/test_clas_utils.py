@@ -3,8 +3,8 @@
 Testing code for CLAS product types
 """
 
-from clas.getProductType import product_type
-from clas.getRule import mapping_rule
+from clas.get_product_type import product_type
+from clas.get_rule import mapping_rule
 
 import os
 import sys
