@@ -16,7 +16,6 @@ import zipfile
 from datetime import datetime, timedelta
 import gzip
 from lxml import etree
-from lxml.cssselect import ns
 from osgeo import gdal
 from pathlib import Path
 from io import BytesIO
@@ -538,7 +537,6 @@ def save(data, outputfile):
         json.dump(data, out, indent=4)
 
 
-@ns
 def uppercase(context, a):
     value = get_etree_element_value(a)
     log.debug("uppercase for: %s", value)
@@ -551,7 +549,6 @@ def uppercase(context, a):
     return value
 
 
-@ns
 def lowercase(context, a):
     value = get_etree_element_value(a)
     log.debug("lowercase for: %s", value)
@@ -564,12 +561,10 @@ def lowercase(context, a):
     return value
 
 
-@ns
 def quote(context, a):
     return [str(a[0] if len(a) == 1 else a)]
 
 
-@ns
 def regex_capture(context, a, regex_str):
     value = get_etree_element_value(a)
     log.debug("regex_capture for: %s with %s", value, regex_str)
@@ -578,7 +573,6 @@ def regex_capture(context, a, regex_str):
     return value
 
 
-@ns
 def join_function(context, a, join_separator=", "):
     log.debug("join_function for: %s", join_separator.join(a))
     try:
@@ -588,7 +582,6 @@ def join_function(context, a, join_separator=", "):
         return a
 
 
-@ns
 def to_wkt(context, a):
     # Convert lat,lon coordinate list into WKT (lon lat) list.
     # Returns a WKT POINT, LINESTRING or POLYGON.
@@ -624,7 +617,6 @@ def to_wkt(context, a):
     return wkt
 
 
-@ns
 def geo_pnt2wkt(context, a):
     if isinstance(a, list):
         coordinates = []
@@ -639,7 +631,6 @@ def geo_pnt2wkt(context, a):
     return value
 
 
-@ns
 def map_function(context, a, map_string):
     """
     map lookup translation
@@ -657,7 +648,6 @@ def map_function(context, a, map_string):
     return value
 
 
-@ns
 def from_json_function(context, a):
     value = json.loads(get_etree_element_value(a))
     log.debug("from_json_function for: %s", value)
@@ -683,7 +673,6 @@ def parse_timedelta(time_str):
     return timedelta(**time_params)
 
 
-@ns
 def date_format(context, a, format="%Y-%m-%dT%H:%M:%SZ", date_add_delta=""):
     """
     simple date math with reformatting (e.g. for clipping and rounding)
