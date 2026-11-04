@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+from clas.getProductType import product_type
 import os
 import csv
 import json
@@ -15,34 +16,30 @@ import zipfile
 from datetime import datetime, timedelta
 import gzip
 from lxml import etree
-from lxml import etree
 from lxml.cssselect import ns
 from osgeo import gdal
 from pathlib import Path
 from io import BytesIO
 
 try:
-  import netCDF4
+    import netCDF4
 except ImportError:
-  netCDF4 = None
+    netCDF4 = None
 
 from dicttoxml import dicttoxml
 
 if sys.version_info < (3, 7):
     from backports.datetime_fromisoformat import MonkeyPatch
+
     MonkeyPatch.patch_fromisoformat()
 
 # Development and mounted
-#from clas.getProductType import product_type
-#from clas.getCollection import collection
-#from clas.getRule import mapping_rule
+# from clas.getProductType import product_type
+# from clas.getCollection import collection
+# from clas.getRule import mapping_rule
 
 # Extract package helpers
 sys.path.append(os.path.dirname(__file__))
-from clas.getProductType import product_type
-from clas.getCollection import collection
-from clas.getRule import mapping_rule
-
 
 log = logging.getLogger("metadata_extract")
 log.setLevel(logging.DEBUG)
@@ -105,39 +102,46 @@ def build_xml_from_netcdf(dataset: netCDF4.Dataset) -> etree.ElementTree:
     return tree
 
 
-class load_mappings():
-    def __new__(self, mappings_file, column = None):
+class load_mappings:
+    def __new__(self, mappings_file, column=None):
 
         if not column:
-            #column = os.path.splitext(os.path.basename(mappings_file))[0]
+            # column = os.path.splitext(os.path.basename(mappings_file))[0]
             column = "mappings"
 
         mappings_rules = dict()
-        mappings_rules['static'] = dict()
+        mappings_rules["static"] = dict()
 
-        with open(mappings_file, 'r', newline='') as csvfile:
-            reader = csv.DictReader(csvfile, delimiter=';')
+        with open(mappings_file, "r", newline="") as csvfile:
+            reader = csv.DictReader(csvfile, delimiter=";")
 
             for row in reader:
-                #log.debug("row_keys: %s", row.keys())
-                if row[column] == '':
+                # log.debug("row_keys: %s", row.keys())
+                if row[column] == "":
                     continue
-                if row[column].startswith('='):
-                    mappings_rules['static'][row['metadata']] = [row[column][1:], row['datatype']]
+                if row[column].startswith("="):
+                    mappings_rules["static"][row["metadata"]] = [
+                        row[column][1:],
+                        row["datatype"],
+                    ]
                     continue
-                if row['file'] not in mappings_rules:
-                    mappings_rules[row['file']] = dict()
-                mappings_rules[row['file']][row['metadata']] = [row[column], row['datatype']]
+                if row["file"] not in mappings_rules:
+                    mappings_rules[row["file"]] = dict()
+                mappings_rules[row["file"]][row["metadata"]] = [
+                    row[column],
+                    row["datatype"],
+                ]
 
         return mappings_rules
 
-class metafile_readers():
+
+class metafile_readers:
 
     # Reads file (metafile) from zip file (inputfile).
     # Returns opened file stream.
     def read_from_zip(self, inputfile, metafile):
-        archive = zipfile.ZipFile(inputfile, 'r')
-        r = re.compile('(.*/)*' + metafile.replace('*', '.*'))
+        archive = zipfile.ZipFile(inputfile, "r")
+        r = re.compile("(.*/)*" + metafile.replace("*", ".*"))
         files = archive.namelist()
         files = list(filter(r.match, files))
         if len(files) == 0:
@@ -145,7 +149,7 @@ class metafile_readers():
         else:
             metafile = files[0]
             log.debug("metadata file found in ZIP: %s", metafile)
-        #else:
+        # else:
         #    metafile = os.path.join(os.path.basename(os.path.splitext(inputfile)[0]), metafile)
         metafile = archive.open(metafile)
         return metafile
@@ -153,8 +157,8 @@ class metafile_readers():
     # Reads file (metafile) from tar file (inputfile).
     # Returns opened file stream.
     def read_from_tar(self, inputfile, metafile):
-        archive = tarfile.open(inputfile, mode='r')
-        r = re.compile('(.*/)*' + metafile.replace('**/','').replace('*', '[^/]*'))
+        archive = tarfile.open(inputfile, mode="r")
+        r = re.compile("(.*/)*" + metafile.replace("**/", "").replace("*", "[^/]*"))
         files = archive.getnames()
         files = list(filter(r.match, files))
         if len(files) == 0:
@@ -163,7 +167,7 @@ class metafile_readers():
             metafile = files[0]
             log.debug("metadata file found in TAR: %s", metafile)
 
-        #else:
+        # else:
         #    metafile = os.path.join(os.path.basename(os.path.splitext(inputfile)[0]), metafile)
         metafile = archive.extractfile(metafile)
         return metafile
@@ -172,7 +176,7 @@ class metafile_readers():
     # Returns opened file stream.
     def read_from_gzip(self, inputfile, metafile):
         log.debug("metadata file found in gzip: %s", metafile)
-        metafile = gzip.open(inputfile, 'rb')
+        metafile = gzip.open(inputfile, "rb")
         return metafile
 
     # Reads file (metafile) from folder (scenefolder).
@@ -186,7 +190,7 @@ class metafile_readers():
                 log.debug("metadata file found in DIR: %s", metafile)
                 return metafile
         log.debug("scene ordner: %s %s", scenefolder, metafile)
-        if '*' in metafile:
+        if "*" in metafile:
             if os.path.isdir(scenefolder):
                 metafiles = glob.glob(os.path.join(scenefolder, metafile), recursive=True)
                 if len(metafiles) == 0:
@@ -202,7 +206,7 @@ class metafile_readers():
                 raise Exception("Metafile " + metafile + " does not match filename " + scenefolder)
         else:
             metafile = os.path.join(scenefolder, metafile)
-        metafile = open(metafile, 'r')
+        metafile = open(metafile, "r")
         return metafile
 
     # Reads file (metafile) from JPEG2000 file (inputfile) using GDAL.
@@ -211,7 +215,7 @@ class metafile_readers():
         image = gdal.Open(inputfile)
         metafile = image.GetMetadata(metafile)[0]
         log.debug("metadata file found in JP2000: %s", metafile)
-        return BytesIO(bytes(metafile, encoding='ISO-8859-1'))
+        return BytesIO(bytes(metafile, encoding="ISO-8859-1"))
 
     def read_from_netcdf(self, inputfile, metafile):
         if not netCDF4:
@@ -251,12 +255,23 @@ class DataTypeHandling:
                 value = "???"
         elif data_type == "Geography":
             value = str(value)
-        elif data_type in ["List", "tileId", "JoinString", "Geo_Pnt", "QualityStatus", "Ascending_Flag",
-                           "AscendingFlag", "FrameSetFootprint", "WKT"]:
-            log.warning(f"data_type {data_type} deprecated and not supported anymore. Please use one of "
-                      f"'String', 'Int', 'Int64', 'Double', 'Boolean', 'DateTime', 'DateTimeOffset', "
-                      f"'Geography' or a valid x-path function to obtain your desired output."
-                      f"Returning {value} instead.")
+        elif data_type in [
+            "List",
+            "tileId",
+            "JoinString",
+            "Geo_Pnt",
+            "QualityStatus",
+            "Ascending_Flag",
+            "AscendingFlag",
+            "FrameSetFootprint",
+            "WKT",
+        ]:
+            log.warning(
+                f"data_type {data_type} deprecated and not supported anymore. Please use one of "
+                f"'String', 'Int', 'Int64', 'Double', 'Boolean', 'DateTime', 'DateTimeOffset', "
+                f"'Geography' or a valid x-path function to obtain your desired output."
+                f"Returning {value} instead."
+            )
         else:
             log.warning(f"Keeping unknown data_type = {data_type}: Returning {value} instead.")
 
@@ -267,22 +282,23 @@ class DataTypeHandling:
 
 # This function can be replaced during the extract() call
 def dictFiller(data, name, type, value):
-    #data[name] = {"Name": name, "Value": value, "Type": type}
+    # data[name] = {"Name": name, "Value": value, "Type": type}
     data[name] = {"Value": value, "Type": type}
     return
+
 
 # Extract metadata from a given source file (xpath_file) for a specific sentinel scene (scene)
 #
 # scene: File containing source metadata (metadata which need to be mapped)
 # csv_file: Mapping file / CSV-file which contains information on how to map metadata tags from "scene"
 #
-def extract(scene, csv_file, dict_filler = dictFiller):
+def extract(scene, csv_file, dict_filler=dictFiller):
     log.info("Scene: %s", scene)
     log.info("Mapping file: %s", csv_file)
 
     # Check input file or folder
     if not os.path.exists(scene):
-        raise Exception('%s does not exist!' % scene)
+        raise Exception("%s does not exist!" % scene)
 
     # Instantiate "readers" class
     readers = metafile_readers()
@@ -299,52 +315,54 @@ def extract(scene, csv_file, dict_filler = dictFiller):
 
     # Read scene filename and identifier
     filename = os.path.basename(scene)
-    identifier = os.path.splitext(filename)[0].replace('.SAFE', '').replace('.EOF', '')
+    identifier = os.path.splitext(filename)[0].replace(".SAFE", "").replace(".EOF", "")
 
     # Fill in some initial information.
-    dict_filler(mapped_metadata, 'filepath', 'String', scene)
-    dict_filler(mapped_metadata, 'filename', 'String', filename)
-    dict_filler(mapped_metadata, 'identifier', 'String', identifier)
+    dict_filler(mapped_metadata, "filepath", "String", scene)
+    dict_filler(mapped_metadata, "filename", "String", filename)
+    dict_filler(mapped_metadata, "identifier", "String", identifier)
 
     # register extension functions for lxml.etree
     ns = etree.FunctionNamespace(None)
-    ns['regex-capture'] = regex_capture
-    ns['uppercase'] = uppercase
-    ns['lowercase'] = lowercase
-    ns['quote'] = quote
-    ns['join'] = join_function
-    ns['map'] = map_function
-    ns['date_format'] = date_format
-    ns['geo_pnt2wkt'] = geo_pnt2wkt
-    ns['from_json'] = from_json_function
-    ns['WKT'] = to_wkt
+    ns["regex-capture"] = regex_capture
+    ns["uppercase"] = uppercase
+    ns["lowercase"] = lowercase
+    ns["quote"] = quote
+    ns["join"] = join_function
+    ns["map"] = map_function
+    ns["date_format"] = date_format
+    ns["geo_pnt2wkt"] = geo_pnt2wkt
+    ns["from_json"] = from_json_function
+    ns["WKT"] = to_wkt
 
     for metafile, queries in metadata_mapping.items():
         log.debug("metafile: %s", metafile)
         log.debug("queries: %s", queries)
 
         # Read metadata source file with corresponding reader (.zip, .tar, folder)
-        if metafile != 'static':
+        if metafile != "static":
 
             # Determine type of scene.
-            scene_type = '.tar.gz' if scene.endswith('.tar.gz') else os.path.splitext(scene)[1].lower()
-            metadata_type = '.tar.gz' if metafile.endswith('.tar.gz') else os.path.splitext(metafile)[1].lower()
+            scene_type = ".tar.gz" if scene.endswith(".tar.gz") else os.path.splitext(scene)[1].lower()
+            metadata_type = (
+                ".tar.gz" if metafile.endswith(".tar.gz") else os.path.splitext(metafile)[1].lower()
+            )
             log.debug("scene %s, metafile %s, type: %s", scene, metafile, scene_type)
 
             # read from metadata file from known types of packages
-            if scene_type == '.nc' or metadata_type == '.nc':
+            if scene_type == ".nc" or metadata_type == ".nc":
                 metadata_source = readers.read_from_netcdf(scene, metafile)
             elif os.path.isdir(scene):
                 metadata_source = readers.read_from_folder(scene, metafile)
-            elif scene_type == '.zip':
+            elif scene_type == ".zip":
                 metadata_source = readers.read_from_zip(scene, metafile)
-            elif scene_type in ['.tar', '.tgz', '.tar.gz']:
+            elif scene_type in [".tar", ".tgz", ".tar.gz"]:
                 metadata_source = readers.read_from_tar(scene, metafile)
-            elif scene_type == '.gz':
+            elif scene_type == ".gz":
                 metadata_source = readers.read_from_gzip(scene, metafile)
-            elif scene_type == '.jp2':
+            elif scene_type == ".jp2":
                 metadata_source = readers.read_from_jp2(scene, metafile)
-            elif scene_type == '.json':
+            elif scene_type == ".json":
                 metadata_source = readers.read_file(scene, metafile)
             elif os.path.isfile(scene):
                 metadata_source = readers.read_from_folder(scene, metafile)
@@ -352,7 +370,7 @@ def extract(scene, csv_file, dict_filler = dictFiller):
                 log.debug("")
                 raise TypeError("Unknown scene %s of type %s", scene, scene_type)
 
-            ## TODO: improve handling, can occur for missing NetCDF library or when metadata file is not found
+            # TODO: improve handling, can occur for missing NetCDF library or when metadata file is not found
             if metadata_source is None:
                 continue
 
@@ -364,17 +382,19 @@ def extract(scene, csv_file, dict_filler = dictFiller):
                 if log.level == logging.DEBUG:
                     # Print help for writing mappings.csv files
                     etree.indent(tree.getroot(), space="  ")
-                    pretty_xml = etree.tostring(tree.getroot(), encoding='unicode', pretty_print=True)
+                    pretty_xml = etree.tostring(tree.getroot(), encoding="unicode", pretty_print=True)
                     log.debug("generated XML:")
                     log.debug(pretty_xml[:10000] + "..." if len(pretty_xml) > 10000 else pretty_xml)
 
                     log.debug("\n=== all XPath expressions for NetCDF ===")
                     for i, element in enumerate(tree.iter()):
                         xpath = tree.getpath(element)
-                        text_info = f" -> '{element.text.strip()}'" if element.text and element.text.strip() else ""
+                        text_info = (
+                            f" -> '{element.text.strip()}'" if element.text and element.text.strip() else ""
+                        )
                         log.debug(f"{i + 1:2d}. {xpath}{text_info}")
 
-            elif metadata_type == '.json':
+            elif metadata_type == ".json":
                 json_data = json.load(metadata_source)
                 xmlstring = dicttoxml(json_data)
                 tree_root = etree.fromstring(xmlstring)
@@ -385,21 +405,27 @@ def extract(scene, csv_file, dict_filler = dictFiller):
             # cleanup XML namespace
             ns = tree.getroot().nsmap
             if None in ns:
-                ns['general'] = ns[None]
+                ns["general"] = ns[None]
                 ns.pop(None)
 
         # process all mapping in this metadata file
         for name, (xpath, dataType) in queries.items():
             # skip commented lines in mapping
-            if name[0] == '#':
-                log.debug("skipping name: %s | xpath: %s | dataType: %s", name, xpath, dataType)
+            if name[0] == "#":
+                log.debug(
+                    "skipping name: %s | xpath: %s | dataType: %s",
+                    name,
+                    xpath,
+                    dataType,
+                )
                 continue
 
             log.debug("name: %s | xpath: %s | dataType: %s", name, xpath, dataType)
 
-            # If target metadata entry is "static" --> store the value provided in the mapping-file source column.
-            if metafile == 'static':
-                value = product_type(filename) if xpath == 'productType' else xpath
+            # If target metadata entry is "static" --> store the value provided
+            # in the mapping-file source column.
+            if metafile == "static":
+                value = product_type(filename) if xpath == "productType" else xpath
                 # data type specific conversions
                 value, data_type_updated = DataTypeHandling.type_handling(value, dataType)
                 # Now write all information to the "data"-dictionary.
@@ -424,7 +450,7 @@ def extract(scene, csv_file, dict_filler = dictFiller):
                 # Check for value.
                 try:
                     value_tmp = tree.xpath(xpath, namespaces=ns)
-                    ##print("xpath returned:", value_tmp, len(value_tmp), type(value_tmp).__name__)
+                    # print("xpath returned:", value_tmp, len(value_tmp), type(value_tmp).__name__)
                     log.debug("xpath returned: %s (%s)", value_tmp, type(value_tmp).__name__)
                     # resolve Element, list or string value
                     value = get_etree_element_value(value_tmp)
@@ -432,10 +458,10 @@ def extract(scene, csv_file, dict_filler = dictFiller):
                     log.warning("extracting %s with XPath: %s", name, xpath, exc_info=ex)
                     continue
 
-            ##print("value for", name, 'with xpath:', xpath, "returned:", value)
+            # print("value for", name, 'with xpath:', xpath, "returned:", value)
 
             # Check whether target value was populated, otherwise continue with next metadata entry
-            if not isinstance(value, float) and isinstance(value, list) and len(value) == 0 or value == None:
+            if not isinstance(value, float) and isinstance(value, list) and len(value) == 0 or value is None:
                 continue
 
             # data type specific conversions
@@ -445,6 +471,7 @@ def extract(scene, csv_file, dict_filler = dictFiller):
             dict_filler(mapped_metadata, name, data_type_updated, value)
 
     return mapped_metadata
+
 
 def get_etree_element_value(value_tmp):
     if value_tmp is None:
@@ -457,12 +484,12 @@ def get_etree_element_value(value_tmp):
         # take first match when xpath returned a list
         if isinstance(value_tmp, list):
             value = value_tmp[0]
-            ##print("value type:", type(value))
-            #if isinstance(value, tree._Element):
+            # print("value type:", type(value))
+            # if isinstance(value, tree._Element):
             try:
                 value = value.text
-            except:
-                #print("ignoring value: ", value_tmp[0])
+            except Exception:
+                # print("ignoring value: ", value_tmp[0])
                 value = str(value)
         else:
             value = str(value_tmp)
@@ -471,21 +498,24 @@ def get_etree_element_value(value_tmp):
         return None
     return value
 
+
 def save(data, outputfile):
-    with open(outputfile, 'w') as out:
+    with open(outputfile, "w") as out:
         json.dump(data, out, indent=4)
+
 
 @ns
 def uppercase(context, a):
     value = get_etree_element_value(a)
     log.debug("uppercase for: %s", value)
     try:
-      value = value.upper()
-      log.debug("uppercase produced: %s", value)
-    except:
-        #log.warning("uppercase ignoring value: %s", value)
+        value = value.upper()
+        log.debug("uppercase produced: %s", value)
+    except Exception:
+        # log.warning("uppercase ignoring value: %s", value)
         return None
     return value
+
 
 @ns
 def lowercase(context, a):
@@ -494,14 +524,16 @@ def lowercase(context, a):
     try:
         value = value.lower()
         log.debug("lowercase produced: %s", value)
-    except:
-        #log.warning("lowercase ignoring value: %s", value)
+    except Exception:
+        # log.warning("lowercase ignoring value: %s", value)
         return None
     return value
+
 
 @ns
 def quote(context, a):
     return [str(a[0] if len(a) == 1 else a)]
+
 
 @ns
 def regex_capture(context, a, regex_str):
@@ -511,14 +543,16 @@ def regex_capture(context, a, regex_str):
     log.debug("regex_capture retruns: %s", value)
     return value
 
+
 @ns
-def join_function(context, a, join_separator=', '):
+def join_function(context, a, join_separator=", "):
     log.debug("join_function for: %s", join_separator.join(a))
     try:
         return join_separator.join(a)
-    except:
+    except Exception:
         log.warning("join_function ignoring value: %s", a)
         return a
+
 
 @ns
 def to_wkt(context, a):
@@ -530,30 +564,31 @@ def to_wkt(context, a):
     log.debug("toWkt - coordinates %s", value)
 
     # split string at every second space if no comma is contained (Sentinel-3)
-    n = 2 if value.find(',') == -1 else 1
+    n = 2 if value.find(",") == -1 else 1
     coordinates = re.findall(" ".join(["[^ ]+"] * n), value)
 
     count = len(coordinates)
     # reverse "lat,lon" into "lon lat" (Sentinel-1 and -2)
-    coordinateString = sep = ''
+    coordinateString = sep = ""
     for point in coordinates:
-        lat,lon = re.split('[, ]', point)
-        coordinateString += sep + lon + ' ' + lat
-        sep = ', '
+        lat, lon = re.split("[, ]", point)
+        coordinateString += sep + lon + " " + lat
+        sep = ", "
     # convert to POINT, LINESTRING or POLYGON
     if count == 1:
-        wkt = 'POINT(' + coordinateString + ')'
+        wkt = "POINT(" + coordinateString + ")"
     elif count == 2:
-        wkt = 'LINESTRING(' + coordinateString + ')'
+        wkt = "LINESTRING(" + coordinateString + ")"
     else:
         if coordinates[0] != coordinates[count - 1]:
             # close polygon
-            latlon = coordinates[0].split(',')
-            coordinateString += ', ' + latlon[1] + ' ' + latlon[0]
+            latlon = coordinates[0].split(",")
+            coordinateString += ", " + latlon[1] + " " + latlon[0]
         if count < 3:
-            raise Exception('insufficient coordinate points ' + ' '.join(coordinates))
-        wkt = 'POLYGON((' + coordinateString + '))'
+            raise Exception("insufficient coordinate points " + " ".join(coordinates))
+        wkt = "POLYGON((" + coordinateString + "))"
     return wkt
+
 
 @ns
 def geo_pnt2wkt(context, a):
@@ -562,12 +597,13 @@ def geo_pnt2wkt(context, a):
         for pnt in a:
             lat = pnt.xpath("*[local-name()='LATITUDE']")[0].text
             lng = pnt.xpath("*[local-name()='LONGITUDE']")[0].text
-            coordinates.append('%s,%s' % (lat, lng))
+            coordinates.append("%s,%s" % (lat, lng))
         value = to_wkt(context, coordinates)
     else:
         log.warning("skipping Geo_Pnt extraction for %s (%s)", a, type(a).__name__)
         return None
     return value
+
 
 @ns
 def map_function(context, a, map_string):
@@ -582,9 +618,10 @@ def map_function(context, a, map_string):
     value = get_etree_element_value(a)
     log.debug("map_function for: %s with %s", value, map_string)
     lookup = json.loads(map_string)
-    value = lookup[value] if value in lookup.keys() else lookup['default']
+    value = lookup[value] if value in lookup.keys() else lookup["default"]
     log.debug("map_function decoded input: %s", value)
     return value
+
 
 @ns
 def from_json_function(context, a):
@@ -593,20 +630,27 @@ def from_json_function(context, a):
     return value
 
 
-timedelta_regex = re.compile(r'^((?P<days>[\.\d]+?)d)?((?P<hours>[\.\d]+?)h)?((?P<minutes>[\.\d]+?)m)?((?P<seconds>[\.\d]+?)s)?$')
+timedelta_regex = re.compile(
+    r"^((?P<days>[\.\d]+?)d)?((?P<hours>[\.\d]+?)h)?((?P<minutes>[\.\d]+?)m)?((?P<seconds>[\.\d]+?)s)?$"
+)
+
+
 def parse_timedelta(time_str):
     """
     Parse a timedelta string e.g. (2h13m) into a timedelta object.
     """
     parts = timedelta_regex.match(time_str)
     if parts is not None:
-        log.warning("Could not parse any time information from '{}'." +
-            "  Examples of valid strings: '8h', '2d8h5m20s', '2m4s'".format(time_str))
+        log.warning(
+            f"Could not parse any time information from '{time_str}'."
+            + "  Examples of valid strings: '8h', '2d8h5m20s', '2m4s'"
+        )
     time_params = {name: float(param) for name, param in parts.groupdict().items() if param}
     return timedelta(**time_params)
 
+
 @ns
-def date_format(context, a, format='%Y-%m-%dT%H:%M:%SZ', date_add_delta=''):
+def date_format(context, a, format="%Y-%m-%dT%H:%M:%SZ", date_add_delta=""):
     """
     simple date math with reformatting (e.g. for clipping and rounding)
     """
@@ -619,28 +663,33 @@ def date_format(context, a, format='%Y-%m-%dT%H:%M:%SZ', date_add_delta=''):
     return value
 
 
+# fmt: off
 if __name__ == "__main__":
     logging.disabled = True
     # define command line argument
     parser = argparse.ArgumentParser(description='Sentinel metadata parser')
-    parser.add_argument("--scene", type=str, help="Path to Sentinel scene (zipped file or folder) or filename of the NetCDF input file", required=True)
+    parser.add_argument("--scene", type=str, help="Path to Sentinel scene (zipped file or folder) or filename of the NetCDF input file", required=True)  # noqa: E501
     parser.add_argument("--mapping", type=str, help="Mapping CSV file with attributes to ", required=True)
     parser.add_argument("--template", type=str, help="jinja template", required=False)
-    parser.add_argument("--set", metavar="KEY=VALUE", nargs='+', help="enter key=value pairs to place in dict", required=False)
-    parser.add_argument('-d', '--debug', help="debugging logs", action="store_const", dest="loglevel", const=logging.DEBUG,
-        default=logging.WARNING)
-    parser.add_argument('-v', '--verbose', help="verbose logs", action="store_const", dest="loglevel", const=logging.INFO)
+    parser.add_argument("--set", metavar="KEY=VALUE", nargs="+", help="enter key=value pairs to place in dict", required=False)  # noqa: E501
+    parser.add_argument("-d", "--debug", help="debugging logs", action="store_const", dest="loglevel", const=logging.DEBUG, default=logging.WARNING)  # noqa: E501
+    parser.add_argument("-v", "--verbose", help="verbose logs", action="store_const", dest="loglevel", const=logging.INFO)  # noqa: E501
     args = parser.parse_args()
+# fmt: on
 
     # configure logging
     log_handler = logging.StreamHandler()
-    log_format = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+    log_format = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
     log_handler.setFormatter(log_format)
     log_handler.setLevel(args.loglevel)
     log.addHandler(log_handler)
 
     # allow mapping to be specified relative to CWD or within <__file__>/mapping/
-    mappings_file = args.mapping if Path(args.mapping).exists() else str(Path(__file__).parent) + "/mappings/" + args.mapping
+    mappings_file = (
+        args.mapping
+        if Path(args.mapping).exists()
+        else str(Path(__file__).parent) + "/mappings/" + args.mapping
+    )
 
     # perform metadata extraction
     extracted_metadata = extract(args.scene, mappings_file, dictFiller)
@@ -649,16 +698,17 @@ if __name__ == "__main__":
     if args.set:
         for item in args.set:
             if "=" in item:
-                key, value = item.split('=')
+                key, value = item.split("=")
                 dictFiller(extracted_metadata, key, "String", value)
 
     if args.template:
         from jinja2 import Environment, FileSystemLoader
-        file_loader = FileSystemLoader('.')
+
+        file_loader = FileSystemLoader(".")
         env = Environment(loader=file_loader)
         template = env.get_template(args.template)
-        output = template.render(properties=extracted_metadata,ENV=os.environ)
+        output = template.render(properties=extracted_metadata, ENV=os.environ)
         print(output)
     else:
         pprint.pprint(extracted_metadata, width=120)
-        #print(json.dumps(extracted_metadata, indent=2))
+        # print(json.dumps(extracted_metadata, indent=2))

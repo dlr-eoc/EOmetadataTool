@@ -1,6 +1,7 @@
 import json
 from extract import extract
 
+
 class TestCustomMapping:
 
     def test_nc_metop(self, paths):
@@ -8,7 +9,9 @@ class TestCustomMapping:
         custom_data_path = f"{paths['data_dir']}/scenes_for_custom_mappings"
         result = extract(f"{custom_data_path}/{id}.nc", f"{paths['mappings_dir']}/METOP.csv")
         expected_result = json.load(open(f"{paths['references_dir']}/extract/{id}.json", "r"))
-        expected_result["filepath"]["Value"] = expected_result["filepath"]["Value"].replace("{{DATA_PATH}}", custom_data_path)
+        expected_result["filepath"]["Value"] = expected_result["filepath"]["Value"].replace(
+            "{{DATA_PATH}}", custom_data_path
+        )
 
         assert result == expected_result
 
@@ -17,6 +20,8 @@ class TestCustomMapping:
         custom_data_path = f"{paths['data_dir']}/scenes_for_custom_mappings"
         result = extract(f"{custom_data_path}/{id}.nc", f"{paths['mappings_dir']}/S5P_O3.csv")
         expected_result = json.load(open(f"{paths['references_dir']}/extract/{id}.json", "r"))
-        expected_result["filepath"]["Value"] = expected_result["filepath"]["Value"].replace("{{DATA_PATH}}", custom_data_path)
+        expected_result["filepath"]["Value"] = expected_result["filepath"]["Value"].replace(
+            "{{DATA_PATH}}", custom_data_path
+        )
 
         assert result == expected_result

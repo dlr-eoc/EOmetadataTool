@@ -1,3 +1,3 @@
-#from metadata_extract import clas
-#import clas
-#import extract
+# from metadata_extract import clas
+# import clas
+# import extract
