@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 import os
-import argparse
 
 
 def product_type(scene: str) -> str:
@@ -29,14 +28,3 @@ def product_type(scene: str) -> str:
     else:
         raise Exception("Could not identify product level")
     return result
-
-
-if __name__ == "__main__":
-    # define command line argument
-    parser = argparse.ArgumentParser(description="Sentinel metadata parser")
-    parser.add_argument("scene", type=str, help="Path to Sentinel scene (zipped file or folder)")
-    args = parser.parse_args()
-
-    productType = product_type(args.scene)
-
-    print(productType)

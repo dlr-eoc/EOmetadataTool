@@ -1,7 +1,5 @@
 #!/usr/bin/python3
 import csv
-import argparse
-from .get_product_type import product_type as pt
 
 
 def mapping_rule(target_product_type: str, product_types_2_rule_mapping: str) -> str:
@@ -21,15 +19,3 @@ def mapping_rule(target_product_type: str, product_types_2_rule_mapping: str) ->
             if row["ESAProductType"] == target_product_type:
                 return row["RuleName"]
     raise Exception("Rule could not be found for %s" % target_product_type)
-
-
-if __name__ == "__main__":
-    # define command line argument
-    parser = argparse.ArgumentParser(description="Sentinel metadata parser")
-    parser.add_argument("scene", type=str, help="Path to Sentinel scene (zipped file or folder)")
-    args = parser.parse_args()
-
-    product_type = pt(args.scene)
-    rule = mapping_rule(product_type, "mappings/ProductTypes2RuleMapping.csv")
-
-    print(rule)
