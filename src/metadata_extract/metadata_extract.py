@@ -1,8 +1,8 @@
 #!/usr/bin/python3
-from clas.get_collection import collection
-from clas.get_product_type import product_type
-from clas.get_rule import mapping_rule
 from extract import extract
+from clas.get_collection import collection
+from clas.get_product_type import product_type as pt
+from clas.get_rule import mapping_rule
 import argparse
 import hashlib
 import logging
@@ -41,50 +41,23 @@ def filesize(filename):
 
 
 # This function can be replaced during the extract() call
-# def dictFiller(data, name, type, value):
-#    data[name] = value
-#    return
-def dictFiller(data, name, type, value):
-    # data[name] = {"Name": name, "Value": value, "Type": type}
-    data[name] = {"Value": value, "Type": type}
+def dict_filler(data, name, data_type, value):
+    data[name] = {"Value": value, "Type": data_type}
     return
 
 
+# fmt: off
 if __name__ == "__main__":
     logging.disabled = True
     # define command line argument
     parser = argparse.ArgumentParser(description="jinja templated metadata extractor")
-    parser.add_argument(
-        "--scene",
-        type=str,
-        help="Path to product file (zipped file or folder)",
-        required=True,
-    )
-    parser.add_argument(
-        "--mapping",
-        type=str,
-        help="Mapping CSV file with attributes to ",
-        required=False,
-    )
+    parser.add_argument("--scene", type=str, help="Path to product file (zipped file or folder)", required=True)  # noqa: E501
+    parser.add_argument("--mapping", type=str, help="Mapping CSV file with attributes to ", required=False)
     parser.add_argument("--template", type=str, help="jinja template", required=False)
-    parser.add_argument(
-        "-d",
-        "--debug",
-        help="debugging logs",
-        action="store_const",
-        dest="loglevel",
-        const=logging.DEBUG,
-        default=logging.WARNING,
-    )
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        help="verbose logs",
-        action="store_const",
-        dest="loglevel",
-        const=logging.INFO,
-    )
+    parser.add_argument("-d", "--debug", help="debugging logs", action="store_const", dest="loglevel", const=logging.DEBUG, default=logging.WARNING)  # noqa: E501
+    parser.add_argument("-v", "--verbose", help="verbose logs", action="store_const", dest="loglevel", const=logging.INFO)  # noqa: E501
     args = parser.parse_args()
+# fmt: on
 
     # configure logging
     log_handler = logging.StreamHandler()
@@ -93,14 +66,14 @@ if __name__ == "__main__":
     log_handler.setLevel(args.loglevel)
     log.addHandler(log_handler)
 
-    context = {}
-    context["filename"] = args.scene
-    context["extract"] = extract
-    context["now"] = str(datetime.now().isoformat()) + "Z"
-    context["dictFiller"] = dictFiller
-    context["sha256sum"] = sha256sum
-    context["md5sum"] = md5sum
-    context["filesize"] = filesize
+    context = {
+        "filename": args.scene,
+        "extract": extract,
+        "now": str(datetime.now().isoformat()) + "Z",
+        "dictFiller": dict_filler,
+        "sha256sum": sha256sum,
+        "md5sum": md5sum,
+        "filesize": filesize}
 
     # allow mapping to be specified relative to CWD or within <__file__>/mapping/
     if args.mapping:
@@ -111,28 +84,27 @@ if __name__ == "__main__":
         )
     else:
         MAPPINGS = os.path.dirname(__file__) + "/mappings"
-        productType = product_type(args.scene)
-        collectionName = collection(args.scene, productType)
-        rule = mapping_rule(productType, MAPPINGS + "/ProductTypes2RuleMapping.csv")
+        product_type = pt(args.scene)
+        collection_name = collection(args.scene, product_type)
+        rule = mapping_rule(product_type, MAPPINGS + "/ProductTypes2RuleMapping.csv")
         mappings_file = MAPPINGS + "/" + rule + ".csv"
 
     # perform metadata extraction
-    extracted_metadata = extract(args.scene, mappings_file, dictFiller)
+    extracted_metadata = extract(args.scene, mappings_file, dict_filler)
 
-    # add some standard metadata ## TODO: needs to be moved into mappings file
+    # add some standard metadata TODO: needs to be moved into mappings file
     try:
-        dictFiller(extracted_metadata, "ProductType", "String", productType)
-        dictFiller(extracted_metadata, "Collection", "String", collectionName)
+        dict_filler(extracted_metadata, "ProductType", "String", product_type)
+        dict_filler(extracted_metadata, "Collection", "String", collection_name)
     except Exception:
         pass
-    dictFiller(extracted_metadata, "contentLength", "Int64", filesize(args.scene))
-    dictFiller(extracted_metadata, "publicationDate", "DateTimeOffset", context["now"])
+    dict_filler(extracted_metadata, "contentLength", "Int64", filesize(args.scene))
+    dict_filler(extracted_metadata, "publicationDate", "DateTimeOffset", context["now"])
 
     # this is passed to the template
     context["attributes"] = extracted_metadata
 
     # use context
-    # pprint.pprint(context)
     if args.template:
         file_loader = FileSystemLoader(".")
         env = Environment(loader=file_loader)
