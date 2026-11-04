@@ -20,6 +20,7 @@ from lxml.cssselect import ns
 from osgeo import gdal
 from pathlib import Path
 from io import BytesIO
+from typing import Callable, IO
 
 try:
     import netCDF4
@@ -33,13 +34,9 @@ if sys.version_info < (3, 7):
 
     MonkeyPatch.patch_fromisoformat()
 
-# Development and mounted
-# from clas.getProductType import product_type
-# from clas.getCollection import collection
-# from clas.getRule import mapping_rule
-
 # Extract package helpers
 sys.path.append(os.path.dirname(__file__))
+
 
 log = logging.getLogger("metadata_extract")
 log.setLevel(logging.DEBUG)
@@ -137,11 +134,58 @@ def mapping_loader(mappings_file: str, column: str = "mappings") -> dict:
     return mappings_rules
 
 
-class metafile_readers:
+class MetafileReaders:
+    """Collection of readers for different input formats."""
+
+    # Mapping of scene type -> reader method name
+    _SCENE_READERS = {
+        ".nc": "read_from_netcdf",
+        ".zip": "read_from_zip",
+        ".tar": "read_from_tar",
+        ".tgz": "read_from_tar",
+        ".tar.gz": "read_from_tar",
+        ".gz": "read_from_gzip",
+        ".jp2": "read_from_jp2",
+        ".json": "read_from_file",
+    }
+
+    def get_reader(self, scene: str, scene_type: str, metadata_type: str) -> Callable[[str, str], IO]:
+        """Get the appropriate reader method based on scene type.
+
+        Args:
+            scene: Path to the scene file/folder.
+            scene_type: File extension (e.g., '.nc', '.zip').
+            metadata_type: Metadata file extension.
+
+        Returns:
+            The method that is capable of reading this datatype.
+        """
+        # NetCDF can come from .nc file or nested in other formats
+        if scene_type == ".nc" or metadata_type == ".nc":
+            reader_func = self.read_from_netcdf
+
+        # Directory takes precedence
+        elif os.path.isdir(scene):
+            reader_func = self.read_from_folder
+
+        else:
+            # Use dictionary dispatch for extension-based lookup
+            if reader_name := self._SCENE_READERS.get(scene_type):
+                reader_func = getattr(self, reader_name)
+
+            # Regular file fallback (important to be tested last, other scene types would be file as well
+            elif os.path.isfile(scene):
+                reader_func = self.read_from_file
+
+            else:
+                raise TypeError(f"Unknown scene {scene} of type {scene_type}")
+
+        return reader_func
 
     # Reads file (metafile) from zip file (inputfile).
     # Returns opened file stream.
-    def read_from_zip(self, inputfile, metafile):
+    @staticmethod
+    def read_from_zip(inputfile, metafile):
         archive = zipfile.ZipFile(inputfile, "r")
         r = re.compile("(.*/)*" + metafile.replace("*", ".*"))
         files = archive.namelist()
@@ -151,14 +195,13 @@ class metafile_readers:
         else:
             metafile = files[0]
             log.debug("metadata file found in ZIP: %s", metafile)
-        # else:
-        #    metafile = os.path.join(os.path.basename(os.path.splitext(inputfile)[0]), metafile)
         metafile = archive.open(metafile)
         return metafile
 
     # Reads file (metafile) from tar file (inputfile).
     # Returns opened file stream.
-    def read_from_tar(self, inputfile, metafile):
+    @staticmethod
+    def read_from_tar(inputfile, metafile):
         archive = tarfile.open(inputfile, mode="r")
         r = re.compile("(.*/)*" + metafile.replace("**/", "").replace("*", "[^/]*"))
         files = archive.getnames()
@@ -169,29 +212,22 @@ class metafile_readers:
             metafile = files[0]
             log.debug("metadata file found in TAR: %s", metafile)
 
-        # else:
-        #    metafile = os.path.join(os.path.basename(os.path.splitext(inputfile)[0]), metafile)
         metafile = archive.extractfile(metafile)
         return metafile
 
     # Reads file (metafile) from zip file (inputfile).
     # Returns opened file stream.
-    def read_from_gzip(self, inputfile, metafile):
+    @staticmethod
+    def read_from_gzip(inputfile, metafile):
         log.debug("metadata file found in gzip: %s", metafile)
         metafile = gzip.open(inputfile, "rb")
         return metafile
 
     # Reads file (metafile) from folder (scenefolder).
     # Returns opened file stream.
-    def read_from_folder(self, scenefolder, metafile):
-        if len(glob.glob(scenefolder + "/" + metafile)) > 0:
-            if metafile.endswith(".nc"):
-                inputfiles = glob.glob(scenefolder + "/" + metafile)
-                log.debug("inputfiles: %s", inputfiles[0])
-                metafile = inputfiles[0]
-                log.debug("metadata file found in DIR: %s", metafile)
-                return metafile
-        log.debug("scene ordner: %s %s", scenefolder, metafile)
+    @staticmethod
+    def read_from_folder(scenefolder, metafile):
+        log.debug("scene folder: %s %s", scenefolder, metafile)
         if "*" in metafile:
             if os.path.isdir(scenefolder):
                 metafiles = glob.glob(os.path.join(scenefolder, metafile), recursive=True)
@@ -213,13 +249,15 @@ class metafile_readers:
 
     # Reads file (metafile) from JPEG2000 file (inputfile) using GDAL.
     # Returns opened file stream.
-    def read_from_jp2(self, inputfile, metafile):
+    @staticmethod
+    def read_from_jp2(inputfile, metafile):
         image = gdal.Open(inputfile)
         metafile = image.GetMetadata(metafile)[0]
         log.debug("metadata file found in JP2000: %s", metafile)
         return BytesIO(bytes(metafile, encoding="ISO-8859-1"))
 
-    def read_from_netcdf(self, inputfile, metafile):
+    @staticmethod
+    def read_from_netcdf(inputfile, metafile):
         if not netCDF4:
             log.error("NetCDF library unavailable, extraction failed")
             return None
@@ -228,6 +266,17 @@ class metafile_readers:
         log.debug("metadata file found in NetCDF: %s", inputfile)
         metafile = netCDF4.Dataset(inputfile)
         return metafile
+
+    @staticmethod
+    def read_from_file(inputfile: str, metafile: str):
+        if "*" in metafile:
+            if fnmatch.fnmatch(inputfile, metafile):
+                metafile = inputfile
+        elif inputfile.endswith(metafile):
+            metafile = inputfile
+        else:
+            raise ValueError(f"Filename {metafile} from csv does not match target file {inputfile}.")
+        return open(metafile, "r")
 
 
 class DataTypeHandling:
@@ -303,7 +352,7 @@ def extract(scene, csv_file, dict_filler=dictFiller):
         raise Exception("%s does not exist!" % scene)
 
     # Instantiate "readers" class
-    readers = metafile_readers()
+    readers = MetafileReaders()
 
     log.debug("current workdir %s %s", os.getcwd(), csv_file)
 
@@ -352,25 +401,8 @@ def extract(scene, csv_file, dict_filler=dictFiller):
             log.debug("scene %s, metafile %s, type: %s", scene, metafile, scene_type)
 
             # read from metadata file from known types of packages
-            if scene_type == ".nc" or metadata_type == ".nc":
-                metadata_source = readers.read_from_netcdf(scene, metafile)
-            elif os.path.isdir(scene):
-                metadata_source = readers.read_from_folder(scene, metafile)
-            elif scene_type == ".zip":
-                metadata_source = readers.read_from_zip(scene, metafile)
-            elif scene_type in [".tar", ".tgz", ".tar.gz"]:
-                metadata_source = readers.read_from_tar(scene, metafile)
-            elif scene_type == ".gz":
-                metadata_source = readers.read_from_gzip(scene, metafile)
-            elif scene_type == ".jp2":
-                metadata_source = readers.read_from_jp2(scene, metafile)
-            elif scene_type == ".json":
-                metadata_source = readers.read_file(scene, metafile)
-            elif os.path.isfile(scene):
-                metadata_source = readers.read_from_folder(scene, metafile)
-            else:
-                log.debug("")
-                raise TypeError("Unknown scene %s of type %s", scene, scene_type)
+            reader = readers.get_reader(scene, scene_type, metadata_type)
+            metadata_source = reader(scene, metafile)
 
             # TODO: improve handling, can occur for missing NetCDF library or when metadata file is not found
             if metadata_source is None:
