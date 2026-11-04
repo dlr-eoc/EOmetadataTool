@@ -48,10 +48,9 @@ def dict_filler(data, name, data_type, value):
 
 # fmt: off
 if __name__ == "__main__":
-    logging.disabled = True
     # define command line argument
     parser = argparse.ArgumentParser(description="jinja templated metadata extractor")
-    parser.add_argument("--scene", type=str, help="Path to product file (zipped file or folder)", required=True)  # noqa: E501
+    parser.add_argument(type=str, help="Path to product file (zipped file or folder)", dest="scene")  # noqa: E501
     parser.add_argument("--mapping", type=str, help="Mapping CSV file with attributes to ", required=False)
     parser.add_argument("--template", type=str, help="jinja template", required=False)
     parser.add_argument("-d", "--debug", help="debugging logs", action="store_const", dest="loglevel", const=logging.DEBUG, default=logging.WARNING)  # noqa: E501

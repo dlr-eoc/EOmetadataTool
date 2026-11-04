@@ -684,10 +684,9 @@ def date_format(context, a, format="%Y-%m-%dT%H:%M:%SZ", date_add_delta=""):
 
 # fmt: off
 if __name__ == "__main__":
-    logging.disabled = True
     # define command line argument
     parser = argparse.ArgumentParser(description='Sentinel metadata parser')
-    parser.add_argument("--scene", type=str, help="Path to Sentinel scene (zipped file or folder) or filename of the NetCDF input file", required=True)  # noqa: E501
+    parser.add_argument(type=str, help="Path to Sentinel scene (zipped file or folder) or filename of the NetCDF input file", dest="scene")  # noqa: E501
     parser.add_argument("--mapping", type=str, help="Mapping CSV file with attributes to ", required=True)
     parser.add_argument("--template", type=str, help="jinja template", required=False)
     parser.add_argument("--set", metavar="KEY=VALUE", nargs="+", help="enter key=value pairs to place in dict", required=False)  # noqa: E501
