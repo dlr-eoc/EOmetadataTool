@@ -331,18 +331,22 @@ class DataTypeHandling:
 
 
 # This function can be replaced during the extract() call
-def dictFiller(data, name, type, value):
-    # data[name] = {"Name": name, "Value": value, "Type": type}
+def dict_filler(data, name, type, value):
     data[name] = {"Value": value, "Type": type}
     return
 
 
-# Extract metadata from a given source file (xpath_file) for a specific sentinel scene (scene)
-#
-# scene: File containing source metadata (metadata which need to be mapped)
-# csv_file: Mapping file / CSV-file which contains information on how to map metadata tags from "scene"
-#
-def extract(scene, csv_file, dict_filler=dictFiller):
+def extract(scene, csv_file, dict_filler=dict_filler) -> dict:
+    """Extract metadata from a given source file (xpath_file) for a specific sentinel scene (scene).
+
+    Args:
+        scene: File containing source metadata (metadata which need to be mapped).
+        csv_file: Mapping file / CSV-file which contains information on how to map metadata tags from "scene".
+        dict_filler: Callable to define the exact way the target dictionary is filled.
+
+    Returns:
+        dict: Dictionary with the extracted metadata.
+    """
     log.info("Scene: %s", scene)
     log.info("Mapping file: %s", csv_file)
 
@@ -385,23 +389,25 @@ def extract(scene, csv_file, dict_filler=dictFiller):
     ns["from_json"] = from_json_function
     ns["WKT"] = to_wkt
 
-    for metafile, queries in metadata_mapping.items():
-        log.debug("metafile: %s", metafile)
+    for metafile_glob, queries in metadata_mapping.items():
+        log.debug("metafile: %s", metafile_glob)
         log.debug("queries: %s", queries)
 
         # Read metadata source file with corresponding reader (.zip, .tar, folder)
-        if metafile != "static":
+        if metafile_glob != "static":
 
             # Determine type of scene.
-            scene_type = ".tar.gz" if scene.endswith(".tar.gz") else os.path.splitext(scene)[1].lower()
+            scene_type = ".tar.gz" if scene.endswith(".tar.gz") else str(os.path.splitext(scene)[1].lower())
             metadata_type = (
-                ".tar.gz" if metafile.endswith(".tar.gz") else os.path.splitext(metafile)[1].lower()
+                ".tar.gz"
+                if metafile_glob.endswith(".tar.gz")
+                else str(os.path.splitext(metafile_glob)[1].lower())
             )
-            log.debug("scene %s, metafile %s, type: %s", scene, metafile, scene_type)
+            log.debug("scene %s, metafile %s, type: %s", scene, metafile_glob, scene_type)
 
             # read from metadata file from known types of packages
             reader = readers.get_reader(scene, scene_type, metadata_type)
-            metadata_source = reader(scene, metafile)
+            metadata_source = reader(scene, metafile_glob)
 
             # TODO: improve handling, can occur for missing NetCDF library or when metadata file is not found
             if metadata_source is None:
@@ -457,7 +463,7 @@ def extract(scene, csv_file, dict_filler=dictFiller):
 
             # If target metadata entry is "static" --> store the value provided
             # in the mapping-file source column.
-            if metafile == "static":
+            if metafile_glob == "static":
                 value = product_type(filename) if xpath == "productType" else xpath
                 # data type specific conversions
                 value, data_type_updated = DataTypeHandling.type_handling(value, dataType)
@@ -470,12 +476,10 @@ def extract(scene, csv_file, dict_filler=dictFiller):
                 continue
 
             if xpath == "filename":
-                # log.debug("- extension: Filename")
                 value = filename
                 dataType = "String"
 
             elif xpath == "now":
-                # log.debug("- extension: Now")
                 value = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
                 dataType = "DateTime"
 
@@ -483,15 +487,12 @@ def extract(scene, csv_file, dict_filler=dictFiller):
                 # Check for value.
                 try:
                     value_tmp = tree.xpath(xpath, namespaces=ns)
-                    # print("xpath returned:", value_tmp, len(value_tmp), type(value_tmp).__name__)
                     log.debug("xpath returned: %s (%s)", value_tmp, type(value_tmp).__name__)
                     # resolve Element, list or string value
                     value = get_etree_element_value(value_tmp)
                 except Exception as ex:
                     log.warning("extracting %s with XPath: %s", name, xpath, exc_info=ex)
                     continue
-
-            # print("value for", name, 'with xpath:', xpath, "returned:", value)
 
             # Check whether target value was populated, otherwise continue with next metadata entry
             if not isinstance(value, float) and isinstance(value, list) and len(value) == 0 or value is None:
@@ -517,12 +518,9 @@ def get_etree_element_value(value_tmp):
         # take first match when xpath returned a list
         if isinstance(value_tmp, list):
             value = value_tmp[0]
-            # print("value type:", type(value))
-            # if isinstance(value, tree._Element):
             try:
                 value = value.text
             except Exception:
-                # print("ignoring value: ", value_tmp[0])
                 value = str(value)
         else:
             value = str(value_tmp)
@@ -544,7 +542,6 @@ def uppercase(context, a):
         value = value.upper()
         log.debug("uppercase produced: %s", value)
     except Exception:
-        # log.warning("uppercase ignoring value: %s", value)
         return None
     return value
 
@@ -556,7 +553,6 @@ def lowercase(context, a):
         value = value.lower()
         log.debug("lowercase produced: %s", value)
     except Exception:
-        # log.warning("lowercase ignoring value: %s", value)
         return None
     return value
 
@@ -715,14 +711,14 @@ if __name__ == "__main__":
     )
 
     # perform metadata extraction
-    extracted_metadata = extract(args.scene, mappings_file, dictFiller)
+    extracted_metadata = extract(args.scene, mappings_file, dict_filler)
 
     # add parameters from comandline
     if args.set:
         for item in args.set:
             if "=" in item:
                 key, value = item.split("=")
-                dictFiller(extracted_metadata, key, "String", value)
+                dict_filler(extracted_metadata, key, "String", value)
 
     if args.template:
         from jinja2 import Environment, FileSystemLoader
