@@ -102,37 +102,39 @@ def build_xml_from_netcdf(dataset: netCDF4.Dataset) -> etree.ElementTree:
     return tree
 
 
-class load_mappings:
-    def __new__(self, mappings_file, column=None):
+def mapping_loader(mappings_file: str, column: str = "mappings") -> dict:
+    """Load content of a csv file into a dictionary.
 
-        if not column:
-            # column = os.path.splitext(os.path.basename(mappings_file))[0]
-            column = "mappings"
+    Args:
+        mappings_file: A string with the path to the csv file.
+        column: A string with the name of column containing the mappings. Defaults to "mappings".
 
-        mappings_rules = dict()
-        mappings_rules["static"] = dict()
+    Returns:
+        A dictionary with the loaded mappings.
+    """
+    mappings_rules = dict()
+    mappings_rules["static"] = dict()
 
-        with open(mappings_file, "r", newline="") as csvfile:
-            reader = csv.DictReader(csvfile, delimiter=";")
+    with open(mappings_file, "r", newline="") as csvfile:
+        reader = csv.DictReader(csvfile, delimiter=";")
 
-            for row in reader:
-                # log.debug("row_keys: %s", row.keys())
-                if row[column] == "":
-                    continue
-                if row[column].startswith("="):
-                    mappings_rules["static"][row["metadata"]] = [
-                        row[column][1:],
-                        row["datatype"],
-                    ]
-                    continue
-                if row["file"] not in mappings_rules:
-                    mappings_rules[row["file"]] = dict()
-                mappings_rules[row["file"]][row["metadata"]] = [
-                    row[column],
+        for row in reader:
+            if row[column] == "":
+                continue
+            if row[column].startswith("="):
+                mappings_rules["static"][row["metadata"]] = [
+                    row[column][1:],
                     row["datatype"],
                 ]
+                continue
+            if row["file"] not in mappings_rules:
+                mappings_rules[row["file"]] = dict()
+            mappings_rules[row["file"]][row["metadata"]] = [
+                row[column],
+                row["datatype"],
+            ]
 
-        return mappings_rules
+    return mappings_rules
 
 
 class metafile_readers:
@@ -306,7 +308,7 @@ def extract(scene, csv_file, dict_filler=dictFiller):
     log.debug("current workdir %s %s", os.getcwd(), csv_file)
 
     # Load metadata mapping.
-    metadata_mapping = load_mappings(csv_file)
+    metadata_mapping = mapping_loader(csv_file)
 
     # raise Exception("ERROR: mapping file missing " + csv_file)
 
