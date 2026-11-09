@@ -28,6 +28,25 @@ Example calls
     --mapping src/metadata_extract/mappings/S5P_TROPOMI_L2.csv \
     --template src/metadata_extract/templates/s5p_l2_stack.j2
   ```
+  
+### Usage with custom mapping tables
+The `EOmetadataTool` can be used with custom mapping files. The files are required to consist of the columns
+* `metadata`: The key for the extracted property in the resulting dictionary.
+* `file`: A glob for the filename containing the meta information. E.g `manifest.safe` or `*.EOF` 
+* `mappings`: The xpath for the property in the metafile.
+* `datatype`: The type of the metadata. One of [the supported DataTypes](#list-of-supported-datatypes)
+
+### List of supported DataTypes
+* `String`
+* `Geography`
+* `Int`
+* `Int64`
+* `Double`
+* `Boolean`
+* `DateTime`
+* `DateTimeOffset`
+
+
 
 ## Important to know
 * Coordinates are in the format "Latitude,Longitude" (this is the default order for Sentinel-1 metadata). Points are separated by space. This order needs be reversed for GeoJSON output (e.g., for geoserver product.json/granules.json)
@@ -35,7 +54,7 @@ Example calls
 ## Example execution in Python
 ```python
 from metadata_extract/extract import extract
-extracted_metadata = extract(args.scene, mappings_file, dictFiller)
+extracted_metadata = extract(args.scene, mappings_file, dict_filler)
 pprint.pprint(extracted_metadata, width=120)
 
 ```
