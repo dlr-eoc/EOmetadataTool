@@ -362,8 +362,6 @@ def extract(scene, csv_file, dict_filler=dict_filler) -> dict:
     # Load metadata mapping.
     metadata_mapping = mapping_loader(csv_file)
 
-    # raise Exception("ERROR: mapping file missing " + csv_file)
-
     # Initialize output dictionary.
     mapped_metadata = dict()
 
@@ -712,7 +710,7 @@ if __name__ == "__main__":
     # perform metadata extraction
     extracted_metadata = extract(args.scene, mappings_file, dict_filler)
 
-    # add parameters from comandline
+    # add parameters from commandline
     if args.set:
         for item in args.set:
             if "=" in item:
@@ -729,4 +727,3 @@ if __name__ == "__main__":
         print(output)
     else:
         pprint.pprint(extracted_metadata, width=120)
-        # print(json.dumps(extracted_metadata, indent=2))

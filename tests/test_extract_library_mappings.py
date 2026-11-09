@@ -10,7 +10,6 @@ import os
 import sys
 import json
 from pathlib import Path
-
 import jsondiff
 
 # setup directories and library location
@@ -19,7 +18,6 @@ LIBDIR = str(BASEDIR.joinpath("../src/metadata_extract").resolve())
 
 # test specimen path
 sys.path.append(LIBDIR)
-# pylint: disable=wrong-import-position
 
 MAPPINGS = LIBDIR + "/mappings"
 
