@@ -14,19 +14,19 @@ Table controlled Earth Observation metadata extractor and STAC tool
 Example calls
 * Dump of extracted metadata from a SAFE.zip package
   ```bash
-  src/metadata_extract/extract.py --scene tests/data/S1A_IW_GRDH_1SDV_20220621T075323_20220621T075348_043758_053961_0000.SAFE.zip \
-    --mapping src/metadata_extract/mappings/S1_L1L2.csv
+  src/metadata_extract/extract.py --mapping src/metadata_extract/mappings/S1_L1L2.csv \
+   tests/data/S1A_IW_GRDH_1SDV_20220621T075323_20220621T075348_043758_053961_0000.SAFE.zip
   ```
 * Format the metadata using a jinja2 template - tool automatically determines sentinel-1, 2 or 3 product types following the file naming conventions and selects extraction mapping and output template
   ```
-  src/metadata_extract/metadata_extract.py --scene tests/data/S2A_MSIL1C_20230216T044851_N0509_R076_T46UEU_20230216T000000.SAFE.zip
+  src/metadata_extract/metadata_extract.py tests/data/S2A_MSIL1C_20230216T044851_N0509_R076_T46UEU_20230216T000000.SAFE.zip
   ```
 
 * Mappings for S5p L2 and L3 are also included, but requires using --mapping and --template parameters
   ```
-  src/metadata_extract/extract.py --scene tests/data/S5P_OFFL_L2__O3_____20200303T013547_20200303T031717_12367_01_010107_20200306T053811.nc  \
-    --mapping src/metadata_extract/mappings/S5P_TROPOMI_L2.csv \
-    --template src/metadata_extract/templates/s5p_l2_stack.j2
+  src/metadata_extract/extract.py --mapping src/metadata_extract/mappings/S5P_TROPOMI_L2.csv \
+    --template src/metadata_extract/templates/s5p_l2_stack.j2 \
+   tests/data/S5P_OFFL_L2__O3_____20200303T013547_20200303T031717_12367_01_010107_20200306T053811.nc
   ```
   
 ### Usage with custom mapping tables
