@@ -6,8 +6,8 @@ authors = [
     {name = "Christoph Reck", email="christoph.reck@dlr.de"},
     {name = "Jonas Eberle", email="jonas.eberle@dlr.de"},
     {name = "Felix Feckler", email="felix.feckler@dlr.de"},
-    {name = "Julian Meyer-Arnek", email="julian.meyer-arnek@dlr.de",
-     name = "Katharina Emde", email="katharina.emde@dlr.de"}
+    {name = "Julian Meyer-Arnek", email="julian.meyer-arnek@dlr.de"},
+    {name = "Katharina Emde", email="katharina.emde@dlr.de"}
 ]
 license = {file = "LICENSE.md"}
 readme = "README.md"
@@ -48,3 +48,11 @@ requires = [
     "wheel"
 ]
 build-backend = "setuptools.build_meta"
+
+[tool.flake8]
+    max-line-length = 110
+    extend-ignore = ["E203", "W503"]
+
+[tool.black]
+    line-length = 110
+    include = '\.pyi?$'

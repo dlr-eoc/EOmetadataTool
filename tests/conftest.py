@@ -1,6 +1,7 @@
 import pytest
 import os
 
+
 @pytest.fixture
 def paths():
     base_dir = get_base_dir()
@@ -10,6 +11,7 @@ def paths():
         mappings_dir=os.path.join(base_dir, "mappings"),
         references_dir=os.path.join(base_dir, "references"),
     )
+
 
 def get_base_dir():
     script_dir = os.path.dirname(os.path.abspath(__file__))
